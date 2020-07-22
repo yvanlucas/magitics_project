@@ -26,22 +26,22 @@ class Resistance_Prediction_kmers(object):
             self.clf = pyscm.SetCoveringMachineClassifier()
             self.param_grid = cfg.SCM_grid
         elif cfg.model == 'gradient':
-            self.clf = ensemble.GradientBoostingClassifier(max_depth=1, max_features=None)
+            self.clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
             self.param_grid = cfg.gradient_grid
 
     def preprocessing_dataframe(self):
         le = preprocessing.LabelEncoder()
         self.dataframe['label'] = le.fit_transform(self.dataframe['label'])
         self.y = self.dataframe['label']
-        self.X = self.dataframe.drop(['label'], axis=1)
-        self.X = self.dataframe.drop(['strain'], axis=1)
+        self.dataframe.drop(['label'], axis=1, inplace=True)
+        self.dataframe.drop(['strain'], axis=1, inplace=True)
+        self.X = self.dataframe
         self.columns = self.X.columns
         # self.dataframe = 0  # clear memory
 
     def split_train_test(self):
         self.X_train, self.X_test, self.y_train, self.y_test = model_selection.train_test_split(self.X, self.y,
-                                                                                                test_size=0.4,
-                                                                                                random_state=42)
+                                                                                                test_size=0.4)
 
     def train_model(self):
         self.CVclf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
