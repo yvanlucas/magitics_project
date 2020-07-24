@@ -1,5 +1,11 @@
-dummy_dataset/*
-venv/*
-sampleREADME.md
-.idea*
 
+dummy_dataset
+venv
+sampleREADME.md
+
+.idea
+__pychache__
+
+*.fna
+*.tab
+*.csv
