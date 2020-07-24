@@ -1,6 +1,6 @@
 # PATHs
 xp_name = 'pseud_levo_9'
-data = 'pseud_cefepime/'
+data = 'pseud_levofloxacin/'
 
 pathtoxp = '/home/ylucas/PycharmProjects/kmers_dummy/dummy_dataset/'
 
@@ -17,4 +17,4 @@ rf_grid = {'max_features': ['sqrt', 'log2'],
 SCM_grid = {'model_type': ['disjunction'], 'max_rules': [10, 100]}
 
 gradient_grid = {'learning_rate': [0.01, 0.1],
-                 'n_estimators': [30]}
+                 'n_estimators': [3, 5]}

@@ -15,17 +15,18 @@ class KmerExtractionAndCount(object):
 
     def __init__(self, fastaname):
 
-        self.pathtofasta = cfg.pathtoxp + 'data/'+cfg.data + fastaname
-
+        self.pathtofasta = os.path.join(cfg.pathtoxp, 'data',cfg.data, fastaname)
         self.strainnumber = self.pathtofasta.split('/')[-1][:-3]
         self.label = self.pathtofasta.split('/')[-2]
+
         self.available_commands = ['parse_kmers']
         self.len_kmers = cfg.len_kmers
         self.min_abundance = cfg.min_abundance
 
-        self.pathtotemp = cfg.pathtoxp + '/' + cfg.xp_name+ '/temp/'
-        self.pathtosavetemp = cfg.pathtoxp + '/' + cfg.xp_name + '/kmers/temp/' + self.strainnumber
-        self.pathtosave = cfg.pathtoxp + cfg.xp_name+ '/kmers/output/' + self.label + self.strainnumber
+        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, 'temp/')
+        self.pathtosavetemp = os.path.join(cfg.pathtoxp, cfg.xp_name , 'kmers/temp', self.strainnumber)
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers/output', self.label+ self.strainnumber)
+
 
     def parse_kmers(self):
         kmerCmd = "gerbil -k %d  -l %d %s %s %s" % (
@@ -61,27 +62,35 @@ class KmersCounts2Dataframe(object):
 
     def iteratefastas(self):
         self.kmerdicts = []
-        for dirname in os.listdir(cfg.pathtoxp + 'data/'+cfg.data):
-            for filename in os.listdir(cfg.pathtoxp + 'data/'+cfg.data + dirname):
+        for dirname in os.listdir(os.path.join(cfg.pathtoxp, 'data', cfg.data)):
+            for filename in os.listdir(os.path.join(cfg.pathtoxp, 'data',cfg.data, dirname)):
                 kmer = KmerExtractionAndCount(dirname + '/' + filename)
                 kmer.parse_kmers()
                 self.kmerdicts.append(kmer.kmer_counts)
 
-        with open(cfg.pathtoxp + '/' + cfg.xp_name + '/kmerdicts.pkl', 'wb') as f:
+        with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f)
 
     def create_dataframe(self):
         if not self.kmerdicts:
-            with open(cfg.pathtoxp + '/' + cfg.xp_name + '/kmerdicts.pkl', 'rb') as f:
+            with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmerdicts.pkl'), 'rb') as f:
                 self.kmerdicts = pickle.load(f)
 
         self.kmerdicts = pd.DataFrame(self.kmerdicts)
         self.kmerdicts = self.kmerdicts.fillna(0)
 
-        with open(cfg.pathtoxp + '/'+ cfg.xp_name + '/kmers_DF.pkl', 'wb') as f:
+        with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f)
 
-#
-k = KmersCounts2Dataframe()
-k.iteratefastas()
-k.create_dataframe()
+    def clean_temp_directories(self):
+        cleankmertempcmd="rm -rf %s" % (self.pathtotemp)
+        os.system(cleankmertempcmd)
+        cleantempcmd="rm -rf %s" % (self.pathtosavetemp)
+        os.system(cleantempcmd)
+
+
+
+kmergenerator = KmersCounts2Dataframe()
+kmergenerator.iteratefastas()
+kmergenerator.create_dataframe()
+kmergenerator.clean_temp_directories()
