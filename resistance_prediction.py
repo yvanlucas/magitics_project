@@ -15,36 +15,40 @@ import config as cfg
 # random.seed(42)
 
 
-class ResistancePredictionkmers(object):
-    def __init__(self, dataframe=False, classifier=False):
+class ResistancePredictionKMers:
+    def __init__(self, dataframe, clf, param_grid):
+        self._check_clf(clf)
 
         self.dataframe = dataframe
         self.clf = clf
         self.param_grid = param_grid
 
         self.le = preprocessing.LabelEncoder()
-        self.clf = classifier
-        self.preprocess(self.dataframe)
+        self.cv_clf = model_selection.GridSearchCV(
+            estimator=self.clf,
+            param_grid=self.param_grid,
+            cv=3,
+            scoring='accuracy',
+            n_jobs=-1
+        )
 
-        if cfg.model == 'rf' and classifier == False:
-            self.clf = ensemble.RandomForestClassifier()
-            self.param_grid = cfg.rf_grid
-        elif cfg.model == 'SCM' and classifier == False:
-            self.clf = pyscm.SetCoveringMachineClassifier()
-            self.param_grid = cfg.SCM_grid
-        elif cfg.model == 'gradient' and classifier == False:
-            self.clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-            self.param_grid = cfg.gradient_grid
+        (
+            self.X_train,
+            self.X_test,
+            self.y_train,
+            self.y_test,
+        ) = self.preprocess(self.dataframe)
 
-        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
-                                                   scoring='accuracy', n_jobs=-1)
+        self.y_predict = None
+        self.score = None
+        self.pvt = None
 
     def preprocess(self, df):
         to_drop = ["label", "strain"]
         X = df.drop(to_drop, axis=1)
-        y = self.le.fit_transform(df["label"])
-        self.columns = X.columns
-        self.X_train, self.X_test, self.y_train, self.y_test = model_selection.train_test_split(X, y, test_size=0.4)
+        y = self.le.fit_transform(df["label"].values)
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.4)
+        return X_train, X_test, y_train, y_test
 
     def fit(self, X_train, y_train):
         self.cv_clf.fit(X_train, y_train)
