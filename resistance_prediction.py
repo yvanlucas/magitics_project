@@ -1,15 +1,17 @@
-from sklearn import ensemble
-from sklearn import model_selection
-from sklearn import metrics
-from sklearn import preprocessing
-import pyscm
-import config as cfg
-import pickle
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
+import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
+from sklearn import metrics
+from sklearn import model_selection
+from sklearn import preprocessing
+
+import config as cfg
+
+
 # random.seed(42)
 
 
@@ -17,9 +19,9 @@ class ResistancePredictionkmers(object):
     def __init__(self, dataframe=False, classifier=False):
 
         self.dataframe = dataframe
-        if self.dataframe == False:
-            with open(cfg.pathtoxp + cfg.xp_name + '/kmers_DF.pkl', 'rb') as f:
-                self.dataframe = pickle.load(f)
+        self.clf = clf
+        self.param_grid = param_grid
+
         self.le = preprocessing.LabelEncoder()
         self.clf = classifier
         self.preprocess(self.dataframe)
@@ -115,7 +117,6 @@ class ResistancePredictionkmers(object):
             self.write_report()
             self.dump_eval(self.X_test, self.y_train, self.y_predict)
 
-
-expe = ResistancePredictionkmers()
-expe.run()
-
+    def _check_clf(self, clf):
+        if not hasattr(clf, "fit") or not hasattr(clf, "predict"):
+            raise ValueError("'clf' must implement a 'fit' and a 'predict' method.")
