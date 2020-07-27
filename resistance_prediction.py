@@ -2,6 +2,7 @@ from sklearn import ensemble
 from sklearn import model_selection
 from sklearn import metrics
 from sklearn import preprocessing
+from sklearn import feature_selection
 import pyscm
 import config as cfg
 import pickle
@@ -17,12 +18,14 @@ import fastparquet
 class ResistancePredictionkmers(object):
     def __init__(self, dataframe=None, classifier=None, param_grid=None):
 
+        self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000)
         self.dataframe = dataframe
         if self.dataframe == None:
             pf=fastparquet.ParquetFile(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parq'))
             self.dataframe=pf.to_pandas()
             # with open(cfg.pathtoxp + cfg.xp_name + '/kmers_DF.pkl', 'rb') as f:
             #     self.dataframe = pickle.load(f)
+        print('0')
         self.le = preprocessing.LabelEncoder()
         self.clf = classifier
         self.param_grid = param_grid
@@ -38,8 +41,14 @@ class ResistancePredictionkmers(object):
         X = df.drop(to_drop, axis=1)
         y = self.le.fit_transform(df["label"].values)
         self.columns = X.columns
-        self.X_train, self.X_test, self.y_train, self.y_test = model_selection.train_test_split(X, y, test_size=0.4)
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.4)
+        return X_train, X_test, y_train, y_test
 
+    def chi2_feature_selection(self, X_train, X_test, y_train):
+
+        X_train=self.chi2_selector.fit_transform(X_train, y_train )
+        X_test=self.chi2_selector.transform(X_test)
+        return X_train, X_test
     def _check_clf(self, clf):
         if not hasattr(clf, "fit") or not hasattr(clf, "predict"):
             raise ValueError("'clf' must implement a 'fit' and a 'predict' method.")
@@ -48,7 +57,8 @@ class ResistancePredictionkmers(object):
         self.cv_clf.fit(X_train, y_train)
 
     def predict(self, X_test):
-        self.y_predict = self.cv_clf.predict_proba(X_test)
+        y_predict = self.cv_clf.predict_proba(X_test)
+        return y_predict
 
     def eval(self, y_test, y_pred, X_test):
         # ROC AUC value
@@ -101,22 +111,29 @@ class ResistancePredictionkmers(object):
                 for kmer in kmers:
                     txt.write(str(kmer) + '\n')
 
-    def dump_eval(self, X_test, y_test, y_predict):
+    def dump_eval(self, y_test, y_predict):
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, f"{cfg.model}_CVresults.pkl"), "wb") as f:
             pickle.dump({"classifier": self.cv_clf,
-                         "features": X_test.columns,
+                         "features": self.columns,
                          "y_pred": y_predict,
                          "y_true": y_test}, f)
 
     def run(self, evaluate=True):
-        self.preprocess(self.dataframe)
+        X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
+        print('1')
+        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
+        print('2')
         self._check_clf(self.cv_clf)
-        self.fit(self.X_train, self.y_train)
+        print('3')
+        self.fit(X_train, y_train)
+        print('4')
         if evaluate:
-            self.predict(self.X_test)
-            self.eval(self.y_test, self.y_predict, self.X_test)
+            y_predict = self.predict(X_test)
+            print('5')
+            self.eval(y_test, y_predict, X_test)
+            print('6')
             self.write_report()
-            self.dump_eval(self.X_test, self.y_train, self.y_predict)
+            self.dump_eval(y_train, y_predict)
 
 
 # if cfg.model == 'rf':

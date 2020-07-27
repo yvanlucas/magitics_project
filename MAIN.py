@@ -23,12 +23,13 @@ def train_test_model():
         param_grid = cfg.gradient_grid
 
     expe = pred.ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+    print('*** Learning phase ***')
     expe.run()
 
 
 
 if __name__ == '__main__':
-    create_DF()
+    #create_DF()
     train_test_model()
 
 
