@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
+import fastparquet
 
 
 class KmerExtractionAndCount(object):
@@ -64,9 +65,9 @@ class KmersCounts2Dataframe(object):
         self.kmerdicts = []
         for dirname in os.listdir(os.path.join(cfg.pathtoxp, 'data', cfg.data)):
             for filename in os.listdir(os.path.join(cfg.pathtoxp, 'data',cfg.data, dirname)):
-                kmer = KmerExtractionAndCount(dirname + '/' + filename)
-                kmer.parse_kmers()
-                self.kmerdicts.append(kmer.kmer_counts)
+                self.kmer = KmerExtractionAndCount(dirname + '/' + filename)
+                self.kmer.parse_kmers()
+                self.kmerdicts.append(self.kmer.kmer_counts)
 
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f)
@@ -79,18 +80,19 @@ class KmersCounts2Dataframe(object):
         self.kmerdicts = pd.DataFrame(self.kmerdicts)
         self.kmerdicts = self.kmerdicts.fillna(0)
 
-        with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
-            pickle.dump(self.kmerdicts, f)
+        # with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
+        #     pickle.dump(self.kmerdicts, f)
+        fastparquet.write(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.parq'), self.kmerdicts)
 
     def clean_temp_directories(self):
-        cleankmertempcmd="rm -rf %s" % (self.pathtotemp)
+        cleankmertempcmd="rm -rf %s" % (self.kmer.pathtotemp)
         os.system(cleankmertempcmd)
-        cleantempcmd="rm -rf %s" % (self.pathtosavetemp)
+        cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
         os.system(cleantempcmd)
 
 
 
-kmergenerator = KmersCounts2Dataframe()
-kmergenerator.iteratefastas()
-kmergenerator.create_dataframe()
-kmergenerator.clean_temp_directories()
+# kmergenerator = KmersCounts2Dataframe()
+# kmergenerator.iteratefastas()
+# kmergenerator.create_dataframe()
+# kmergenerator.clean_temp_directories()

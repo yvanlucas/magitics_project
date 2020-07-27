@@ -1,6 +1,8 @@
 import Create_kmersDB as kmer
 import resistance_prediction as pred
-
+import config as cfg
+import pyscm
+from sklearn import ensemble
 
 def create_DF():
     kmersDB = kmer.KmersCounts2Dataframe()
@@ -10,24 +12,24 @@ def create_DF():
 
 
 def train_test_model():
-    model = pred.Resistance_Prediction_kmers()
-    model.preprocessing_dataframe()
-    model.split_train_test()
-    model.train_model()
-    model.test_model()
-    model.ROC_AUC_evaluation()
+    if cfg.model == 'rf':
+        clf = ensemble.RandomForestClassifier()
+        param_grid = cfg.rf_grid
+    elif cfg.model == 'SCM':
+        clf = pyscm.SetCoveringMachineClassifier()
+        param_grid = cfg.SCM_grid
+    elif cfg.model == 'gradient':
+        clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+        param_grid = cfg.gradient_grid
+
+    expe = pred.ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+    expe.run()
 
 
-model = pred.Resistance_Prediction_kmers()
-model.preprocessing_dataframe()
-model.split_train_test()
-model.train_model()
-model.test_model()
-model.ROC_AUC_evaluation()
 
-# if __name__ == '__main__':
-#     create_DF()
-#     train_test_model()
+if __name__ == '__main__':
+    create_DF()
+    train_test_model()
 
 
 

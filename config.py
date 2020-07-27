@@ -3,6 +3,7 @@ xp_name = 'pseud_levo_9'
 data = 'pseud_levofloxacin/'
 
 pathtoxp = '/home/ylucas/PycharmProjects/kmers_dummy/dummy_dataset/'
+pathtodata='/home/ylucas/PycharmProjects/kmers_dummy/dummy_dataset/data'
 
 # Kmer extraction parameters
 len_kmers = 9  # If len_kmers<=8, gerbil will set len_kmers to 8
