@@ -11,15 +11,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-import fastparquet
-import pyarrow.parquet as pq
+#import fastparquet
+#import pyarrow.parquet as pq
 # random.seed(42)
 
 
 class ResistancePredictionkmers(object):
     def __init__(self, dataframe=None, classifier=None, param_grid=None):
 
-        self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000)
+        self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000000)
         self.dataframe = dataframe
         if self.dataframe == None:
             # table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
@@ -121,7 +121,7 @@ class ResistancePredictionkmers(object):
             pickle.dump({"classifier": self.cv_clf,
                          "features": self.columns,
                          "y_pred": y_predict,
-                         "y_true": y_test}, f)
+                         "y_true": y_test}, f, protocol=4)
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
