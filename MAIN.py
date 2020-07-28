@@ -8,6 +8,7 @@ def create_DF():
     kmersDB = kmer.KmersCounts2Dataframe()
     kmersDB.iteratefastas()
     kmersDB.create_dataframe()  # Dataframe stored as a pickle
+    kmersDB.clean_temp_directories()
     print('***Dataframe created***')
 
 

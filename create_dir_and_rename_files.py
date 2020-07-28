@@ -19,10 +19,10 @@ def create_dir():
     if not os.path.exists(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers')):
         mkdirCmd1 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers'))
         os.system(mkdirCmd1)
-        mkdirCmd2 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers', 'output'))
-        os.system(mkdirCmd2)
-        mkdirCmd3 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers', 'temp'))
-        os.system(mkdirCmd3)
+        # mkdirCmd2 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers', 'output'))
+        # os.system(mkdirCmd2)
+        # mkdirCmd3 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers', 'temp'))
+        # os.system(mkdirCmd3)
         mkdirCmd3 = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, 'temp'))
         os.system(mkdirCmd3)
 

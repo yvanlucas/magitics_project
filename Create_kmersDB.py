@@ -2,7 +2,9 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
-import fastparquet
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 
 
 class KmerExtractionAndCount(object):
@@ -20,16 +22,16 @@ class KmerExtractionAndCount(object):
         self.strainnumber = self.pathtofasta.split('/')[-1][:-3]
         self.label = self.pathtofasta.split('/')[-2]
 
-        self.available_commands = ['parse_kmers']
+        self.available_commands = ['parse_kmers_dsk', 'parse_kmers_gerbil']
         self.len_kmers = cfg.len_kmers
         self.min_abundance = cfg.min_abundance
 
-        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, 'temp/')
-        self.pathtosavetemp = os.path.join(cfg.pathtoxp, cfg.xp_name , 'kmers/temp', self.strainnumber)
-        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers/output', self.label+ self.strainnumber)
+        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, 'temp', self.label+self.strainnumber)
+        #self.pathtosavetemp = os.path.join(cfg.pathtoxp, cfg.xp_name , 'kmers/temp', self.strainnumber)
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers', self.label+ self.strainnumber)
 
 
-    def parse_kmers(self):
+    def parse_kmers_gerbil(self):
         kmerCmd = "gerbil -k %d  -l %d %s %s %s" % (
             self.len_kmers, self.min_abundance, self.pathtofasta, self.pathtotemp, self.pathtosavetemp)
         os.system(kmerCmd)  # default minimal abundance of kmers=3, can be changed with "-l newvalue"
@@ -47,6 +49,24 @@ class KmerExtractionAndCount(object):
                     self.kmer_counts[ID] = count
                 except:
                     print(kmercount, kmerID)
+
+
+    def parse_kmers_dsk(self):
+        kmerCmd = "dsk -file %s -out %s -kmer-size %d -verbose 0" % (self.pathtofasta, self.pathtotemp, self.len_kmers)
+        os.system(kmerCmd)
+        outputCmd = "dsk2ascii -file %s -out  %s" % (self.pathtotemp, self.pathtosave)
+        os.system(outputCmd)
+
+        self.kmer_counts = {}
+        with open(self.pathtosave, 'r') as fasta:
+            lines = fasta.readlines()
+            self.kmer_counts['strain'] = self.strainnumber
+            for line in lines:
+                try:
+                    [ID, count] = line.split(' ')
+                    self.kmer_counts[str(ID)] = int(count)
+                except:
+                    print('line = '+line)
 
         self.kmer_counts['label'] = self.label
 
@@ -66,13 +86,14 @@ class KmersCounts2Dataframe(object):
         for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
             for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)):
                 self.kmer = KmerExtractionAndCount(dirname + '/' + filename)
-                self.kmer.parse_kmers()
+                self.kmer.parse_kmers_dsk()
                 self.kmerdicts.append(self.kmer.kmer_counts)
 
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f)
 
     def create_dataframe(self):
+        print('*** Creating dataframe ***')
         if not self.kmerdicts:
             with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmerdicts.pkl'), 'rb') as f:
                 self.kmerdicts = pickle.load(f)
@@ -80,15 +101,17 @@ class KmersCounts2Dataframe(object):
         self.kmerdicts = pd.DataFrame(self.kmerdicts)
         self.kmerdicts = self.kmerdicts.fillna(0)
 
-        # with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
-        #     pickle.dump(self.kmerdicts, f)
-        fastparquet.write(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.parq'), self.kmerdicts)
+        # table=pa.Table.from_pandas(self.kmerdicts)
+        # pq.write_table(table, os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
+        with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
+            pickle.dump(self.kmerdicts, f)
+        #fastparquet.write(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.parq'), self.kmerdicts)
 
     def clean_temp_directories(self):
         cleankmertempcmd="rm -rf %s" % (self.kmer.pathtotemp)
         os.system(cleankmertempcmd)
-        cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
-        os.system(cleantempcmd)
+        # cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
+        # os.system(cleantempcmd)
 
 
 
