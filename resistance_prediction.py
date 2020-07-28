@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import fastparquet
+import pyarrow.parquet as pq
 # random.seed(42)
 
 
@@ -21,15 +22,14 @@ class ResistancePredictionkmers(object):
         self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000)
         self.dataframe = dataframe
         if self.dataframe == None:
-            pf=fastparquet.ParquetFile(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parq'))
-            self.dataframe=pf.to_pandas()
-            # with open(cfg.pathtoxp + cfg.xp_name + '/kmers_DF.pkl', 'rb') as f:
-            #     self.dataframe = pickle.load(f)
+            # table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
+            # self.dataframe=table.to_pandas()
+            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.pkl'), 'rb') as f:
+                self.dataframe = pickle.load(f)
         print('0')
         self.le = preprocessing.LabelEncoder()
         self.clf = classifier
         self.param_grid = param_grid
-        self.preprocess(self.dataframe)
 
         self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
                                                    scoring='accuracy', n_jobs=-1)
@@ -135,7 +135,7 @@ class ResistancePredictionkmers(object):
             self.write_report()
             self.dump_eval(y_train, y_predict)
 
-
+#
 # if cfg.model == 'rf':
 #     clf = ensemble.RandomForestClassifier()
 #     param_grid = cfg.rf_grid
