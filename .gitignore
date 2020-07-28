@@ -3,6 +3,8 @@ dummy_dataset
 venv
 sampleREADME.md
 config.py
+slurm*
+pyscm
 
 .idea
 __pychache__
