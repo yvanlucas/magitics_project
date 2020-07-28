@@ -69,7 +69,7 @@ class KmerExtractionAndCount(object):
                     print('line = '+line)
 
         self.kmer_counts['label'] = self.label
-
+ 
 
 class KmersCounts2Dataframe(object):
     """
