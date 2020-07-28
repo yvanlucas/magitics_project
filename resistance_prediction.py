@@ -61,8 +61,13 @@ class ResistancePredictionkmers(object):
         return y_predict
 
     def eval(self, y_test, y_pred, X_test):
+        # Create eval dir
+        mkdircmd='mkdir %s' %(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
+        os.system(mkdircmd)
+
         # ROC AUC value
         self.score = metrics.roc_auc_score(y_test, y_pred[:, 1])
+        #self.acc = metrics.accuracy_score(y_test, y_pred[:,1])
         print('*** ROC AUC = ***')
         print(self.score)
         # Heatmap for GridSearchCV
@@ -73,7 +78,7 @@ class ResistancePredictionkmers(object):
 
         ax = sns.heatmap(self.pvt)
         ax.set(ylabel=ls_params[0], xlabel=ls_params[1])
-        ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, f"{cfg.model}_gridCV_heatmap.png"))
+        ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_gridCV_heatmap.png"))
 
         # Boosting learning curve
         if cfg.model == 'gradient':
@@ -93,10 +98,10 @@ class ResistancePredictionkmers(object):
             plt.xlabel('Boosting Iterations')
             plt.ylabel('Deviance')
             fig.tight_layout()
-            plt.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, f"{cfg.model}boosting_learning_curve.png"))
+            plt.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}boosting_learning_curve.png"))
 
     def write_report(self):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, f"{cfg.model}_report.txt"), 'w') as txt:
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), 'w') as txt:
             txt.write(cfg.xp_name + '  //  ROC AUC = ' + str(self.score) + '\n')
             txt.write('\n')
             txt.write('Len_kmers = ' + str(cfg.len_kmers) + '\n')
@@ -112,7 +117,7 @@ class ResistancePredictionkmers(object):
                     txt.write(str(kmer) + '\n')
 
     def dump_eval(self, y_test, y_predict):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
             pickle.dump({"classifier": self.cv_clf,
                          "features": self.columns,
                          "y_pred": y_predict,

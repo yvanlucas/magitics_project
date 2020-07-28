@@ -1,4 +1,6 @@
 # PATHs
+
+id='1'
 xp_name = 'pseud_levo_9'
 data = 'Pseudomonas_aeruginosa/levofloxacin/'
 
