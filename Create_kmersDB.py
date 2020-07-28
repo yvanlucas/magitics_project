@@ -16,7 +16,7 @@ class KmerExtractionAndCount(object):
 
     def __init__(self, fastaname):
 
-        self.pathtofasta = os.path.join(cfg.pathtoxp, 'data',cfg.data, fastaname)
+        self.pathtofasta = os.path.join(cfg.pathtodata,cfg.data, fastaname)
         self.strainnumber = self.pathtofasta.split('/')[-1][:-3]
         self.label = self.pathtofasta.split('/')[-2]
 
@@ -63,8 +63,8 @@ class KmersCounts2Dataframe(object):
 
     def iteratefastas(self):
         self.kmerdicts = []
-        for dirname in os.listdir(os.path.join(cfg.pathtoxp, 'data', cfg.data)):
-            for filename in os.listdir(os.path.join(cfg.pathtoxp, 'data',cfg.data, dirname)):
+        for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+            for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)):
                 self.kmer = KmerExtractionAndCount(dirname + '/' + filename)
                 self.kmer.parse_kmers()
                 self.kmerdicts.append(self.kmer.kmer_counts)
