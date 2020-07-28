@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
-import pyarrow as pa
-import pyarrow.parquet as pq
+#import pyarrow as pa
+#import pyarrow.parquet as pq
 
 
 
@@ -90,7 +90,7 @@ class KmersCounts2Dataframe(object):
                 self.kmerdicts.append(self.kmer.kmer_counts)
 
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
-            pickle.dump(self.kmerdicts, f)
+            pickle.dump(self.kmerdicts, f, protocol=4)
 
     def create_dataframe(self):
         print('*** Creating dataframe ***')
@@ -104,7 +104,7 @@ class KmersCounts2Dataframe(object):
         # table=pa.Table.from_pandas(self.kmerdicts)
         # pq.write_table(table, os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
         with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
-            pickle.dump(self.kmerdicts, f)
+            pickle.dump(self.kmerdicts, f, protocol=4)
         #fastparquet.write(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.parq'), self.kmerdicts)
 
     def clean_temp_directories(self):

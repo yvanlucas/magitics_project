@@ -11,8 +11,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-import fastparquet
-import pyarrow.parquet as pq
+#import fastparquet
+#import pyarrow.parquet as pq
 # random.seed(42)
 
 
@@ -116,7 +116,7 @@ class ResistancePredictionkmers(object):
             pickle.dump({"classifier": self.cv_clf,
                          "features": self.columns,
                          "y_pred": y_predict,
-                         "y_true": y_test}, f)
+                         "y_true": y_test}, f, protocol=4)
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
