@@ -11,8 +11,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-#import fastparquet
-#import pyarrow.parquet as pq
+
+
+# import fastparquet
+# import pyarrow.parquet as pq
 # random.seed(42)
 
 
@@ -34,8 +36,6 @@ class ResistancePredictionkmers(object):
         self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
                                                    scoring='accuracy', n_jobs=-1)
 
-
-
     def preprocess(self, df):
         to_drop = ["label", "strain"]
         X = df.drop(to_drop, axis=1)
@@ -46,9 +46,10 @@ class ResistancePredictionkmers(object):
 
     def chi2_feature_selection(self, X_train, X_test, y_train):
 
-        X_train=self.chi2_selector.fit_transform(X_train, y_train )
-        X_test=self.chi2_selector.transform(X_test)
+        X_train = self.chi2_selector.fit_transform(X_train, y_train)
+        X_test = self.chi2_selector.transform(X_test)
         return X_train, X_test
+
     def _check_clf(self, clf):
         if not hasattr(clf, "fit") or not hasattr(clf, "predict"):
             raise ValueError("'clf' must implement a 'fit' and a 'predict' method.")
@@ -62,14 +63,18 @@ class ResistancePredictionkmers(object):
 
     def eval(self, y_test, y_pred, X_test):
         # Create eval dir
-        mkdircmd='mkdir %s' %(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
+        mkdircmd = 'mkdir %s' % (os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
         os.system(mkdircmd)
 
-        # ROC AUC value
-        self.score = metrics.roc_auc_score(y_test, y_pred[:, 1])
-        #self.acc = metrics.accuracy_score(y_test, y_pred[:,1])
+        # metrics values
+        self.score = {}
+        self.score['ROC_AUC'] = metrics.roc_auc_score(y_test, y_pred[:, 1])
+        self.score['Accuracy'] = metrics.accuracy_score(y_test, y_pred[:, 1].round(), normalize=False)
+        self.score['MAE'] = metrics.mean_absolute_error(y_test, y_pred[:, 1])
+        self.score['MSE'] = metrics.mean_squared_error(y_test, y_pred[:, 1])
+        # self.acc = metrics.accuracy_score(y_test, y_pred[:,1])
         print('*** ROC AUC = ***')
-        print(self.score)
+        print(self.score['ROC_AUC'])
         # Heatmap for GridSearchCV
         ls_params = list(self.param_grid.keys())
         self.pvt = pd.pivot_table(pd.DataFrame(self.cv_clf.cv_results_), values='mean_test_score', index='param_' +
@@ -102,8 +107,9 @@ class ResistancePredictionkmers(object):
 
     def write_report(self):
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), 'w') as txt:
-            txt.write(cfg.xp_name + '  //  ROC AUC = ' + str(self.score) + '\n')
+            txt.write(cfg.xp_name + '\n')
             txt.write('\n')
+            txt.write(str(self.score)+'\n')
             txt.write('Len_kmers = ' + str(cfg.len_kmers) + '\n')
             txt.write('Min_abundance = ' + str(cfg.min_abundance) + '\n')
             txt.write('Model = ' + str(self.clf) + '\n')
@@ -125,18 +131,12 @@ class ResistancePredictionkmers(object):
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
-        print('1')
         X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
-        print('2')
         self._check_clf(self.cv_clf)
-        print('3')
         self.fit(X_train, y_train)
-        print('4')
         if evaluate:
             y_predict = self.predict(X_test)
-            print('5')
             self.eval(y_test, y_predict, X_test)
-            print('6')
             self.write_report()
             self.dump_eval(y_train, y_predict)
 
