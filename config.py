@@ -2,10 +2,10 @@
 id='3'
 xp_name = 'pseud_levo_31'
 
-data = 'Pseudomonas_aeruginosa/levofloxacin/'
+data = ''
 
-pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count'
-pathtodata='/scratch/MAGITICS_data/'
+pathtoxp = '/home/ylucas/Bureau/Data/PATRIC/'
+pathtodata='/home/ylucas/Bureau/Data/PATRIC/levofloxacin/'
 
 # Kmer extraction parameters
 len_kmers = 31  # If len_kmers<=8, gerbil will set len_kmers to 8
