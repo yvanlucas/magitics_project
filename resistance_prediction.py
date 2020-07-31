@@ -69,7 +69,7 @@ class ResistancePredictionkmers(object):
         # metrics values
         self.score = {}
         self.score['ROC_AUC'] = metrics.roc_auc_score(y_test, y_pred[:, 1])
-        self.score['Accuracy'] = metrics.accuracy_score(y_test, y_pred[:, 1].round(), normalize=False)
+        self.score['Accuracy'] = metrics.accuracy_score(y_test, y_pred[:, 1].round())
         self.score['MAE'] = metrics.mean_absolute_error(y_test, y_pred[:, 1])
         self.score['MSE'] = metrics.mean_squared_error(y_test, y_pred[:, 1])
         # self.acc = metrics.accuracy_score(y_test, y_pred[:,1])
@@ -131,7 +131,7 @@ class ResistancePredictionkmers(object):
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
-        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
+#        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
         self._check_clf(self.cv_clf)
         self.fit(X_train, y_train)
         if evaluate:

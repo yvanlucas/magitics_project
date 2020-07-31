@@ -1,5 +1,5 @@
 # PATHs
-id='3'
+id='4'
 xp_name = 'pseud_levo_31'
 
 data = 'Pseudomonas_aeruginosa/levofloxacin/'
@@ -17,7 +17,7 @@ model = 'SCM'  # can be ['rf','SCM', 'gradient']
 rf_grid = {'max_features': ['sqrt', 'log2'],
            'max_depth': [4, 8]}
 
-SCM_grid = {'model_type': ['disjunction', 'conjunction'], 'max_rules': [3 ,10, 100]}
+SCM_grid = {'p': [0.5, 1, 10, 20], 'max_rules': [1, 3 ,10, 100], 'model_type':['conjunction','disjunction']}
 
 gradient_grid = {'max_depth': [1, 5],
                  'n_estimators': [10, 40, 70]}

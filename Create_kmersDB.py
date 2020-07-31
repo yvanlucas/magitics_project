@@ -52,7 +52,7 @@ class KmerExtractionAndCount(object):
 
 
     def parse_kmers_dsk(self):
-        kmerCmd = "dsk -file %s -out %s -kmer-size %d -verbose 0" % (self.pathtofasta, self.pathtotemp, self.len_kmers)
+        kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (self.pathtofasta, self.pathtotemp, self.len_kmers)
         os.system(kmerCmd)
         outputCmd = "dsk2ascii -file %s -out  %s" % (self.pathtotemp, self.pathtosave)
         os.system(outputCmd)
