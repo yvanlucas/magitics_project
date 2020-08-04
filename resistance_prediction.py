@@ -111,7 +111,7 @@ class ResistancePredictionkmers(object):
             txt.write('\n')
             txt.write(str(self.score)+'\n')
             txt.write('Len_kmers = ' + str(cfg.len_kmers) + '\n')
-            txt.write('Min_abundance = ' + str(cfg.min_abundance) + '\n')
+            # txt.write('Min_abundance = ' + str(cfg.min_abundance) + '\n')
             txt.write('Model = ' + str(self.clf) + '\n')
             txt.write('Param_grid = ' + str(self.param_grid) + '\n')
             txt.write('\n')
