@@ -7,7 +7,7 @@ slurm*
 pyscm
 
 .idea
-__pychache__
+__pycache__
 
 *.fna
 *.tab
