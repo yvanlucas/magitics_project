@@ -14,7 +14,7 @@ import pandas as pd
 
 
 # import fastparquet
-# import pyarrow.parquet as pq
+import pyarrow.parquet as pq
 # random.seed(42)
 
 
@@ -23,25 +23,26 @@ class ResistancePredictionkmers(object):
 
         self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000000)
         self.dataframe = dataframe
-        if self.dataframe == None:
-            # table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
-            # self.dataframe=table.to_pandas()
-            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.pkl'), 'rb') as f:
-                self.dataframe = pickle.load(f)
-        print('0')
+        # if self.dataframe == None:
+        #     table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
+        #     self.dataframe=table.to_pandas()
+        #     self.dataframe.transpose()
+
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_mats.pkl'), 'rb') as f:
+            [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
         self.le = preprocessing.LabelEncoder()
         self.clf = classifier
         self.param_grid = param_grid
 
-        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
+        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2,
                                                    scoring='accuracy', n_jobs=-1)
 
     def preprocess(self, df):
-        to_drop = ["label", "strain"]
-        X = df.drop(to_drop, axis=1)
-        y = self.le.fit_transform(df["label"].values)
-        self.columns = X.columns
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.4)
+        #to_drop = ["label", "strain"]
+        #X = df.drop(to_drop, axis=1)
+        y = self.le.fit_transform(self.labels)
+        #self.columns = X.columns
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=1/3)
         return X_train, X_test, y_train, y_test
 
     def chi2_feature_selection(self, X_train, X_test, y_train):
@@ -118,7 +119,7 @@ class ResistancePredictionkmers(object):
             txt.write('Relevant kmers : \n')
             if cfg.model == 'rf' or cfg.model == 'gradient':
                 featimp = self.cv_clf.best_estimator_.feature_importances_
-                kmers = self.columns[np.nonzero(featimp)]
+                kmers = list(self.kmer_to_index.keys())[np.nonzero(featimp)]
                 for kmer in kmers:
                     txt.write(str(kmer) + '\n')
 
@@ -140,16 +141,16 @@ class ResistancePredictionkmers(object):
             self.write_report()
             self.dump_eval(y_train, y_predict)
 
-#
-# if cfg.model == 'rf':
-#     clf = ensemble.RandomForestClassifier()
-#     param_grid = cfg.rf_grid
-# elif cfg.model == 'SCM':
-#     clf = pyscm.SetCoveringMachineClassifier()
-#     param_grid = cfg.SCM_grid
-# elif cfg.model == 'gradient':
-#     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-#     param_grid = cfg.gradient_grid
-#
-# expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-# expe.run()
+
+if cfg.model == 'rf':
+    clf = ensemble.RandomForestClassifier()
+    param_grid = cfg.rf_grid
+elif cfg.model == 'SCM':
+    clf = pyscm.SetCoveringMachineClassifier()
+    param_grid = cfg.SCM_grid
+elif cfg.model == 'gradient':
+    clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+    param_grid = cfg.gradient_grid
+
+expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+expe.run()

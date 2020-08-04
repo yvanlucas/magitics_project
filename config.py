@@ -4,15 +4,15 @@ xp_name = 'pseud_levo_31'
 
 data = ''
 
-pathtoxp = '/home/ylucas/Bureau/Data/PATRIC/'
-pathtodata='/home/ylucas/Bureau/Data/PATRIC/levofloxacin/'
+pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
+pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/data/'
 
 # Kmer extraction parameters
 len_kmers = 31  # If len_kmers<=8, gerbil will set len_kmers to 8
 min_abundance = 3
 
 # Learning parameters
-model = 'SCM'  # can be ['rf','SCM', 'gradient']
+model = 'gradient'  # can be ['rf','SCM', 'gradient']
 
 rf_grid = {'max_features': ['sqrt', 'log2'],
            'max_depth': [4, 8]}

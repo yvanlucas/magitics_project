@@ -39,5 +39,5 @@ def write_kover_metadata_files():
                 metadata.write(filename[:-3]+'\t'+'0\n')
 
 #changefna2fa()
-#create_dir()
-write_kover_metadata_files()
+create_dir()
+#write_kover_metadata_files()

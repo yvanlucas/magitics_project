@@ -2,8 +2,10 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
-#import pyarrow as pa
-#import pyarrow.parquet as pq
+import pyarrow as pa
+import pyarrow.parquet as pq
+import scipy.sparse as sp
+import numpy as np
 
 
 
@@ -60,7 +62,7 @@ class KmerExtractionAndCount(object):
         self.kmer_counts = {}
         with open(self.pathtosave, 'r') as fasta:
             lines = fasta.readlines()
-            self.kmer_counts['strain'] = self.strainnumber
+            #self.kmer_counts['strain'] = self.strainnumber
             for line in lines:
                 try:
                     [ID, count] = line.split(' ')
@@ -68,7 +70,6 @@ class KmerExtractionAndCount(object):
                 except:
                     print('line = '+line)
 
-        self.kmer_counts['label'] = self.label
  
 
 class KmersCounts2Dataframe(object):
@@ -82,15 +83,57 @@ class KmersCounts2Dataframe(object):
 
 
     def iteratefastas(self):
-        self.kmerdicts = []
+        self.kmerdicts = {}
+        self.labels=[]
+        self.strains=[]
         for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+            print(os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)))
             for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)):
-                self.kmer = KmerExtractionAndCount(dirname + '/' + filename)
-                self.kmer.parse_kmers_dsk()
-                self.kmerdicts.append(self.kmer.kmer_counts)
+                kmer = KmerExtractionAndCount(os.path.join(dirname, filename))
+                kmer.parse_kmers_dsk()
+                self.strains.append(kmer.strainnumber)
+                self.labels.append(kmer.label)
+                #self.kmerdicts.append(self.kmer.kmer_counts)
+                for key in kmer.kmer_counts.keys():
+                    if key in self.kmerdicts:
+                        self.kmerdicts[key][kmer.strainnumber]=int(kmer.kmer_counts[key])
+                    else:
+                        self.kmerdicts[key]= {kmer.strainnumber: int(kmer.kmer_counts[key])}
 
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f, protocol=4)
+
+        self.clean_temp_directories(kmer)
+
+
+    def create_sparse_matrix(self):
+        print('*** Creating matrix ***')
+        if not self.kmerdicts:
+            print('loading kmers dictionary')
+            with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmerdicts.pkl'), 'rb') as f:
+                self.kmerdicts = pickle.load(f)
+
+        n_strains=len(self.strains)
+        self.strain_to_index={strain:i for i, strain in zip(range(n_strains), self.strains)}
+        self.kmer_to_index={kmer: i for i, kmer in enumerate(self.kmerdicts)}
+
+
+        rows=[]
+        columns=[]
+        data=[]
+
+        #Populate matrix
+        for kmer in self.kmerdicts:
+            for strain in self.kmerdicts[kmer]:
+                rows.append(self.strain_to_index[strain])
+                columns.append(self.kmer_to_index[kmer])
+                data.append(self.kmerdicts[kmer][strain])
+
+        del self.kmerdicts
+        self.mat = sp.csr_matrix((data, (rows, columns)),shape=(n_strains, len(self.kmer_to_index)), dtype=np.int8)
+
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_mats.pkl'), 'wb') as f:
+           pickle.dump([self.mat, self.labels, self.strain_to_index, self.kmer_to_index], f, protocol=4)
 
     def create_dataframe(self):
         print('*** Creating dataframe ***')
@@ -98,24 +141,24 @@ class KmersCounts2Dataframe(object):
             with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmerdicts.pkl'), 'rb') as f:
                 self.kmerdicts = pickle.load(f)
 
-        self.kmerdicts = pd.DataFrame(self.kmerdicts)
-        self.kmerdicts = self.kmerdicts.fillna(0)
+        self.kmerdb = pd.DataFrame(self.kmerdicts)
+        #self.kmerdicts = self.kmerdicts.fillna(0)
 
-        # table=pa.Table.from_pandas(self.kmerdicts)
-        # pq.write_table(table, os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
-        with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
-            pickle.dump(self.kmerdicts, f, protocol=4)
+        table=pa.Table.from_pandas(self.kmerdicts.transpose)
+        pq.write_table(table, os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
+        #with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.pkl'), 'wb') as f:
+         #   pickle.dump(self.kmerdicts, f, protocol=4)
         #fastparquet.write(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmers_DF.parq'), self.kmerdicts)
 
-    def clean_temp_directories(self):
-        cleankmertempcmd="rm -rf %s" % (self.kmer.pathtotemp)
+    def clean_temp_directories(self, kmer):
+        cleankmertempcmd="rm -rf %s" % (kmer.pathtotemp)
         os.system(cleankmertempcmd)
         # cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
         # os.system(cleantempcmd)
 
 
 
-# kmergenerator = KmersCounts2Dataframe()
-# kmergenerator.iteratefastas()
-# kmergenerator.create_dataframe()
-# kmergenerator.clean_temp_directories()
+kmergenerator = KmersCounts2Dataframe()
+kmergenerator.iteratefastas()
+kmergenerator.create_sparse_matrix()
+
