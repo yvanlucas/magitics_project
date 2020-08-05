@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
-import pyarrow as pa
-import pyarrow.parquet as pq
+#import pyarrow as pa
+#import pyarrow.parquet as pq
 import scipy.sparse as sp
 import numpy as np
 

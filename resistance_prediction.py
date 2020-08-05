@@ -14,7 +14,7 @@ import pandas as pd
 
 
 # import fastparquet
-import pyarrow.parquet as pq
+#import pyarrow.parquet as pq
 # random.seed(42)
 
 
