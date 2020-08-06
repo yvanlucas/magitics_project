@@ -42,7 +42,7 @@ class ResistancePredictionkmers(object):
         #X = df.drop(to_drop, axis=1)
         y = self.le.fit_transform(self.labels)
         #self.columns = X.columns
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=1/3)
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=0.33)
         return X_train, X_test, y_train, y_test
 
     def chi2_feature_selection(self, X_train, X_test, y_train):

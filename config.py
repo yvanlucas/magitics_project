@@ -9,7 +9,7 @@ pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/data/'
 
 # Kmer extraction parameters
 len_kmers = 31  # If len_kmers<=8, gerbil will set len_kmers to 8
-min_abundance = 3
+min_abundance = 1
 
 # Learning parameters
 model = 'gradient'  # can be ['rf','SCM', 'gradient']
