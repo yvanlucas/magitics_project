@@ -42,7 +42,9 @@ class ResistancePredictionkmers(object):
         #X = df.drop(to_drop, axis=1)
         y = self.le.fit_transform(self.labels)
         #self.columns = X.columns
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=0.33)
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=1/3)
+        print(type(X_train))
+        del self.mat
         return X_train, X_test, y_train, y_test
 
     def chi2_feature_selection(self, X_train, X_test, y_train):
@@ -119,7 +121,7 @@ class ResistancePredictionkmers(object):
             txt.write('Relevant kmers : \n')
             if cfg.model == 'rf' or cfg.model == 'gradient':
                 featimp = self.cv_clf.best_estimator_.feature_importances_
-                kmers = list(self.kmer_to_index.keys())[np.nonzero(featimp)]
+                kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
                 for kmer in kmers:
                     txt.write(str(kmer) + '\n')
 
@@ -132,13 +134,13 @@ class ResistancePredictionkmers(object):
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
-	print('1')
+        print('1')
 #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
         self._check_clf(self.cv_clf)
         print('2')
-	self.fit(X_train, y_train)
+        self.fit(X_train, y_train)
         print('3')
-	if evaluate:
+        if evaluate:
             y_predict = self.predict(X_test)
             self.eval(y_test, y_predict, X_test)
             self.write_report()
@@ -155,5 +157,5 @@ elif cfg.model == 'gradient':
     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
     param_grid = cfg.gradient_grid
 
-#expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-#expe.run()
+expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+expe.run()
