@@ -158,7 +158,7 @@ class KmersCounts2Dataframe(object):
 
 
 
-kmergenerator = KmersCounts2Dataframe()
-kmergenerator.iteratefastas()
-kmergenerator.create_sparse_matrix()
+#kmergenerator = KmersCounts2Dataframe()
+#kmergenerator.iteratefastas()
+#kmergenerator.create_sparse_matrix()
 

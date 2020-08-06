@@ -132,10 +132,13 @@ class ResistancePredictionkmers(object):
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
+	print('1')
 #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
         self._check_clf(self.cv_clf)
-        self.fit(X_train, y_train)
-        if evaluate:
+        print('2')
+	self.fit(X_train, y_train)
+        print('3')
+	if evaluate:
             y_predict = self.predict(X_test)
             self.eval(y_test, y_predict, X_test)
             self.write_report()
@@ -152,5 +155,5 @@ elif cfg.model == 'gradient':
     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
     param_grid = cfg.gradient_grid
 
-expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-expe.run()
+#expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+#expe.run()
