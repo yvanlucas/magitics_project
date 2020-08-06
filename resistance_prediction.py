@@ -14,7 +14,7 @@ import pandas as pd
 
 
 # import fastparquet
-import pyarrow.parquet as pq
+#import pyarrow.parquet as pq
 # random.seed(42)
 
 
@@ -112,7 +112,7 @@ class ResistancePredictionkmers(object):
             txt.write('\n')
             txt.write(str(self.score)+'\n')
             txt.write('Len_kmers = ' + str(cfg.len_kmers) + '\n')
-            txt.write('Min_abundance = ' + str(cfg.min_abundance) + '\n')
+            # txt.write('Min_abundance = ' + str(cfg.min_abundance) + '\n')
             txt.write('Model = ' + str(self.clf) + '\n')
             txt.write('Param_grid = ' + str(self.param_grid) + '\n')
             txt.write('\n')
@@ -132,10 +132,13 @@ class ResistancePredictionkmers(object):
 
     def run(self, evaluate=True):
         X_train, X_test, y_train, y_test = self.preprocess(self.dataframe)
+	print('1')
 #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
         self._check_clf(self.cv_clf)
-        self.fit(X_train, y_train)
-        if evaluate:
+        print('2')
+	self.fit(X_train, y_train)
+        print('3')
+	if evaluate:
             y_predict = self.predict(X_test)
             self.eval(y_test, y_predict, X_test)
             self.write_report()
@@ -152,5 +155,5 @@ elif cfg.model == 'gradient':
     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
     param_grid = cfg.gradient_grid
 
-expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-expe.run()
+#expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+#expe.run()

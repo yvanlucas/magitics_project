@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import pickle
 import config as cfg
-import pyarrow as pa
-import pyarrow.parquet as pq
+#import pyarrow as pa
+#import pyarrow.parquet as pq
 import scipy.sparse as sp
 import numpy as np
 
@@ -158,7 +158,7 @@ class KmersCounts2Dataframe(object):
 
 
 
-kmergenerator = KmersCounts2Dataframe()
-kmergenerator.iteratefastas()
-kmergenerator.create_sparse_matrix()
+#kmergenerator = KmersCounts2Dataframe()
+#kmergenerator.iteratefastas()
+#kmergenerator.create_sparse_matrix()
 
