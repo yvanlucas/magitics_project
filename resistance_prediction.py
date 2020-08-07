@@ -11,6 +11,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+import scipy as sp
+import numpy as np
 
 
 # import fastparquet
@@ -40,12 +42,13 @@ class ResistancePredictionkmers(object):
     def preprocess(self, df):
         #to_drop = ["label", "strain"]
         #X = df.drop(to_drop, axis=1)
-        y = self.le.fit_transform(self.labels)
+        self.y = self.le.fit_transform(self.labels)
         #self.columns = X.columns
         X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, y, test_size=1/3)
         print(type(X_train))
         del self.mat
         return X_train, X_test, y_train, y_test
+
 
     def chi2_feature_selection(self, X_train, X_test, y_train):
 
@@ -145,6 +148,82 @@ class ResistancePredictionkmers(object):
             self.eval(y_test, y_predict, X_test)
             self.write_report()
             self.dump_eval(y_train, y_predict)
+
+
+class TestStreamingBatch(object):
+    #TODO class pour extraire kmers et predire classes de fichiers fasta un a la fois (streaming)
+    def __init__(self, kmer_to_index, clf):
+        self.pathtotestdir=cfg.pathtotestdir
+        self.kmer_to_index=kmer_to_index
+        self.clf = clf
+        self.pathtotemp= 'fillpathtotemp'
+
+
+    def iterate_fastas(self):
+
+        files=[file for file in os.listdir(self.pathtotestdir)]
+        batchsize= 10
+        index=0
+        remaining=len(files)
+        iter=0
+        labels = []
+        y_preds=[]
+        while remaining > 0:
+            batch = min(remaining, batchsize)
+            cols=[]
+            rows=[]
+            datas=[]
+
+            for file in files[index:index+batch]:
+                col, row, data, label= self.parse_and_map_kmers(file, iter)
+                cols.extend(col)
+                rows.extend(row)
+                datas.extend(data)
+                labels.extend(label)
+                iter+=1
+
+            X_test=sp.csr_matrix((datas, (rows, cols)), shape=(batchsize, len(self.kmer_to_index)), dtype=np.int8)
+            y_preds.extend(self.clf.predict_proba(X_test))
+        #TODO tester pour voir si ca fonctionne correctement
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+            pickle.dump({"classifier": self.cv_clf,
+                         "features": self.columns,
+                         "y_pred": y_predict,
+                         "y_true": y_test}, f, protocol=4)
+
+    def parse_and_map_kmers(self, fastaname, batchnumber):
+        kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (os.path.join(self.pathtotestdir, fastaname), os.path.join(self.pathtotemp, fastaname), cfg.len_kmers)
+        os.system(kmerCmd)
+        outputCmd = "dsk2ascii -file %s -out  %s" % (os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtotemp, fastaname, 'out'))
+        os.system(outputCmd)
+        label=fastaname.split('/')[-1][:-3]
+        self.kmer_count = {}
+        with open(os.path.join(self.pathtotemp, fastaname, 'out') , 'r') as fasta:
+            lines = fasta.readlines()
+            #self.kmer_counts['strain'] = self.strainnumber
+            for line in lines:
+                try:
+                    [ID, count] = line.split(' ')
+                    self.kmer_count[str(ID)] = int(count)
+                except:
+                    print('line = '+line)
+
+        rows=[]
+        data=[]
+        columns=[]
+
+        for kmer in self.kmer_count:
+            columns.append(self.kmer_to_index[kmer])
+            rows.append(batchnumber)
+            data.append(self.kmer_count[kmer])
+
+        return columns, rows, data, label
+
+
+    def predict_resistance(self, pred_mat):
+
+        return
+
 
 
 if cfg.model == 'rf':
