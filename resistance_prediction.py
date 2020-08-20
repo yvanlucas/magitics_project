@@ -157,5 +157,5 @@ elif cfg.model == 'gradient':
     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
     param_grid = cfg.gradient_grid
 
-expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-expe.run()
+#expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+#expe.run()

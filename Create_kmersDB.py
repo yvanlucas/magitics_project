@@ -88,7 +88,7 @@ class KmersCounts2Dataframe(object):
         self.strains=[]
         for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
             print(os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)))
-            for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)):
+            for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname))[:100]:
                 kmer = KmerExtractionAndCount(os.path.join(dirname, filename))
                 kmer.parse_kmers_dsk()
                 self.strains.append(kmer.strainnumber)
