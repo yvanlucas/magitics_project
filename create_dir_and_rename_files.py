@@ -2,6 +2,7 @@
 # TODO create function to rename files from .fna to .fa
 import os
 import config as cfg
+import shutil
 
 
 def changefna2fa():
@@ -13,6 +14,13 @@ def changefna2fa():
                           os.path.join(cfg.pathtodata, cfg.data, dirname, filename[:-4] + '.fa'))
             elif filename[-4:]=='.tab':
                 os.remove(os.path.join(cfg.pathtodata, cfg.data, dirname, filename))
+
+def label_in_name(dirnamein, dirnameout):
+    for file in os.listdir(dirnamein):
+        shutil.move(os.path.join(dirnamein, file), os.path.join(dirnameout, dirnamein.split('/')[-1]+file))
+
+
+
 
 
 def create_dir():
@@ -39,5 +47,5 @@ def write_kover_metadata_files():
                 metadata.write(filename[:-3]+'\t'+'0\n')
 
 #changefna2fa()
-create_dir()
+#create_dir()
 #write_kover_metadata_files()
