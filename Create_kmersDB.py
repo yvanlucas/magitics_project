@@ -1,4 +1,5 @@
 import os
+import random
 import pandas as pd
 import pickle
 import config as cfg
@@ -19,10 +20,11 @@ class KmerExtractionAndCount(object):
     """
 
     def __init__(self, fastaname):
-
+        print(fastaname)
         self.pathtofasta = os.path.join(cfg.pathtodata,cfg.data, fastaname)
         self.strainnumber = self.pathtofasta.split('/')[-1][:-3]
-        self.label = self.pathtofasta.split('/')[-2]
+        self.label=fastaname[:5]
+        # self.label = self.pathtofasta.split('/')[-2]
 
         self.available_commands = ['parse_kmers_dsk', 'parse_kmers_gerbil']
         self.len_kmers = cfg.len_kmers
@@ -86,20 +88,21 @@ class KmersCounts2Dataframe(object):
         self.kmerdicts = {}
         self.labels=[]
         self.strains=[]
-        for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
-            print(os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)))
-            for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname))[:100]:
-                kmer = KmerExtractionAndCount(os.path.join(dirname, filename))
-                kmer.parse_kmers_dsk()
-                self.strains.append(kmer.strainnumber)
-                self.labels.append(kmer.label)
-                #self.kmerdicts.append(self.kmer.kmer_counts)
-                for key in kmer.kmer_counts.keys():
-                    if key in self.kmerdicts:
-                        self.kmerdicts[key][kmer.strainnumber]=int(kmer.kmer_counts[key])
-                    else:
-                        self.kmerdicts[key]= {kmer.strainnumber: int(kmer.kmer_counts[key])}
+        #for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+        #    print(os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)))
+        for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+            kmer = KmerExtractionAndCount(os.path.join(filename))
+            kmer.parse_kmers_dsk()
+            self.strains.append(kmer.strainnumber)
+            self.labels.append(kmer.label)
+            #self.kmerdicts.append(self.kmer.kmer_counts)
+            for key in kmer.kmer_counts.keys():
+                if key in self.kmerdicts:
+                    self.kmerdicts[key][kmer.strainnumber]=int(kmer.kmer_counts[key])
+                else:
+                    self.kmerdicts[key]= {kmer.strainnumber: int(kmer.kmer_counts[key])}
 
+	print(self.labels)
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f, protocol=4)
 
@@ -112,6 +115,7 @@ class KmersCounts2Dataframe(object):
             print('loading kmers dictionary')
             with open(os.path.join(cfg.pathtoxp , cfg.xp_name , 'kmerdicts.pkl'), 'rb') as f:
                 self.kmerdicts = pickle.load(f)
+
 
         n_strains=len(self.strains)
         self.strain_to_index={strain:i for i, strain in zip(range(n_strains), self.strains)}
@@ -158,7 +162,7 @@ class KmersCounts2Dataframe(object):
 
 
 
-kmergenerator = KmersCounts2Dataframe()
-kmergenerator.iteratefastas()
-kmergenerator.create_sparse_matrix()
+#kmergenerator = KmersCounts2Dataframe()
+#kmergenerator.iteratefastas()
+#kmergenerator.create_sparse_matrix()
 

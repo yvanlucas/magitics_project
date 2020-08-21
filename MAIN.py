@@ -9,7 +9,7 @@ def create_DF():
     kmersDB.iteratefastas()
     kmersDB.create_sparse_matrix()
 #    kmersDB.create_dataframe()  # Dataframe stored as a pickle
-    kmersDB.clean_temp_directories()
+#    kmersDB.clean_temp_directories()
     print('***Dataframe created***')
 
 
@@ -26,8 +26,10 @@ def train_test_model():
 
     expe = pred.ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
     print('*** Learning phase ***')
-    expe.run()
-
+    expe.run(evaluate=False)
+	
+    test=pred.TestStreamingBatch(clf=expe.cv_clf.best_estimator_, kmer_to_index=expe.kmer_to_index)
+    test.run()
 
 
 if __name__ == '__main__':

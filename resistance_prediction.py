@@ -172,7 +172,7 @@ class TestStreamingBatch(object):
     def predict_fastas(self):
         self.missing_kmers=[]
         files = [file for file in os.listdir(self.testdir)]
-        batchsize = 1
+        batchsize = 10
         index = 0
         remaining = len(files)
         iter = 0
@@ -277,8 +277,8 @@ elif cfg.model == 'gradient':
     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
     param_grid = cfg.gradient_grid
 
-expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-expe.run(evaluate=False)
+#expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
+#expe.run(evaluate=False)
 
 
 #with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "rb") as f:
@@ -287,6 +287,6 @@ expe.run(evaluate=False)
 #    kmer_to_index = dic['features']
 #    print('loaded')
 
-test = TestStreamingBatch(clf=clf, kmer_to_index=kmer_to_index)
-test.run()
+#test = TestStreamingBatch(clf=clf, kmer_to_index=kmer_to_index)
+#test.run()
 
