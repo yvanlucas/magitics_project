@@ -1,7 +1,7 @@
 # MAGITICS
 > Research project using machine learning for prediction of antibiotic resistance of bacterias.
 
-## Table of Contents 
+## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
