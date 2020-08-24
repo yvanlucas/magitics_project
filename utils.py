@@ -46,24 +46,14 @@ def write_kover_metadata_files():
     metadata = open(os.path.join(cfg.pathtoxp, "metadata.txt"), "w")
     for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
         for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data + dirname)):
-            if dirname == "Resistant":
-                genomedata.write(
-                    filename[:-3]
-                    + "\t"
-                    + str(os.path.join(cfg.pathtodata, cfg.data + dirname, filename))
-                    + "\n"
-                )
-                metadata.write(filename[:-3] + "\t" + "1\n")
-            elif dirname == "Susceptible":
-                genomedata.write(
-                    filename[:-3]
-                    + "\t"
-                    + str(os.path.join(cfg.pathtodata, cfg.data + dirname, filename))
-                    + "\n"
-                )
-                metadata.write(filename[:-3] + "\t" + "0\n")
+            if dirname=='Resistant':
+                genomedata.write(filename[:-3]+'\t'+str(os.path.join(cfg.pathtodata, cfg.data+dirname, filename))+'\n')
+                metadata.write(filename[:-3]+'\t'+'1\n')
+            elif dirname=='Susceptible':
+                genomedata.write(filename[:-3]+'\t'+str(os.path.join(cfg.pathtodata, cfg.data+dirname, filename))+'\n')
+                metadata.write(filename[:-3]+'\t'+'0\n')
 
+#changefna2fa()
+#create_dir()
+#write_kover_metadata_files()
 
-# changefna2fa()
-# create_dir()
-# write_kover_metadata_files()

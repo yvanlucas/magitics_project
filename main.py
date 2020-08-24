@@ -2,16 +2,15 @@ import pyscm
 from sklearn import ensemble
 
 import config as cfg
-import Create_kmersDB as kmer
-import resistance_prediction as pred
+import data
+import learning
 
 
-def create_DF():
-    kmersDB = kmer.KmersCounts2Dataframe()
-    kmersDB.iteratefastas()
-    kmersDB.create_dataframe()  # Dataframe stored as a pickle
-    kmersDB.clean_temp_directories()
-    print("***Dataframe created***")
+def create_trainDB():
+    datas = data.Kmercount_to_matrix()
+    datas.run()
+    print('***Dataframe created***')
+
 
 
 def train_test_model():
@@ -25,11 +24,14 @@ def train_test_model():
         clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
         param_grid = cfg.gradient_grid
 
-    expe = pred.ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-    print("*** Learning phase ***")
-    expe.run()
+    train=learning.Train_kmer_clf()
+    train.run(evaluate=False)
+
+    test=learning.Test_streaming(batchsize=10, kmer_to_index=train.kmer_to_index, clf=train.cv_clf)
+    test.run()
 
 
 if __name__ == "__main__":
-    # create_DF()
+    create_trainDB()
     train_test_model()
+
