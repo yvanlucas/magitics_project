@@ -102,7 +102,7 @@ class KmersCounts2Dataframe(object):
                 else:
                     self.kmerdicts[key]= {kmer.strainnumber: int(kmer.kmer_counts[key])}
 
-	print(self.labels)
+        print(self.labels)
         with open(os.path.join(cfg.pathtoxp  ,cfg.xp_name, 'kmerdicts.pkl'), 'wb') as f:
             pickle.dump(self.kmerdicts, f, protocol=4)
 

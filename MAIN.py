@@ -33,7 +33,7 @@ def train_test_model():
 
 
 if __name__ == '__main__':
-    create_DF()
+#    create_DF()
     train_test_model()
 
 
