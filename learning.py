@@ -23,7 +23,6 @@ class Train_kmer_clf(object):
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, "kmers_mats.pkl"), "rb") as f:
             [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
 
-
         mkdircmd = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
         os.system(mkdircmd)
 
@@ -35,13 +34,13 @@ class Train_kmer_clf(object):
         self.y = self.le.fit_transform(self.labels)
 
     def split_train_test(self, testratio=0.2):
-        if testratio>0:
+        if testratio > 0:
             X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, self.y, test_size=testratio)
         else:
-            X_train=self.mat
-            y_train=self.y
-            X_test=None
-            y_test=None
+            X_train = self.mat
+            y_train = self.y
+            X_test = None
+            y_test = None
         del self.mat, self.y
         return X_train, X_test, y_train, y_test
 
@@ -51,14 +50,13 @@ class Train_kmer_clf(object):
         X_test = self.chi2_selector.transform(X_test)
         return X_train, X_test
 
-
     def fit(self, X_train, y_train):
-        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2, scoring="accuracy", n_jobs=-1)
+        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2,
+                                                   scoring="accuracy", n_jobs=-1)
         self.cv_clf.fit(X_train, y_train)
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'wb') as f:
             pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index}, f, protocol=4)
-
 
     def predict(self, X_test):
         y_predict = self.cv_clf.predict_proba(X_test)
@@ -77,11 +75,12 @@ class Train_kmer_clf(object):
     def plot_CV_heatmap(self):
         # Heatmap for GridSearchCV
         ls_params = list(self.param_grid.keys())
-        self.pvt = pd.pivot_table(pd.DataFrame(self.cv_clf.cv_results_), values="mean_test_score", index="param_" + ls_params[0], columns="param_" + ls_params[1])
+        self.pvt = pd.pivot_table(pd.DataFrame(self.cv_clf.cv_results_), values="mean_test_score",
+                                  index="param_" + ls_params[0], columns="param_" + ls_params[1])
         ax = sns.heatmap(self.pvt)
         ax.set(ylabel=ls_params[0], xlabel=ls_params[1])
         ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_gridCV_heatmap.png")
-        )
+                          )
 
     def plot_boosting_learning_curve(self, X_test, y_test):
         if cfg.model == "gradient":
@@ -92,8 +91,10 @@ class Train_kmer_clf(object):
             fig = plt.figure(figsize=(6, 6))
             plt.subplot(1, 1, 1)
             plt.title(cfg.xp_name + "  //  ROC AUC = " + str(self.score))
-            plt.plot(np.arange(self.cv_clf.best_params_["n_estimators"]) + 1, self.cv_clf.best_estimator_.train_score_, "b-", label="Training Set Deviance")
-            plt.plot(np.arange(self.cv_clf.best_params_["n_estimators"]) + 1, test_score, "r-", label="Test Set Deviance")
+            plt.plot(np.arange(self.cv_clf.best_params_["n_estimators"]) + 1, self.cv_clf.best_estimator_.train_score_,
+                     "b-", label="Training Set Deviance")
+            plt.plot(np.arange(self.cv_clf.best_params_["n_estimators"]) + 1, test_score, "r-",
+                     label="Test Set Deviance")
             plt.legend(loc="upper right")
             plt.xlabel("Boosting Iterations")
             plt.ylabel("Deviance")
@@ -115,8 +116,10 @@ class Train_kmer_clf(object):
                     txt.write(str(kmer) + "\n")
 
     def dump_eval(self, y_test, y_predict):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"),"wb") as f:
-            pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test}, f, protocol=4)
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+            pickle.dump(
+                {"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test}, f,
+                protocol=4)
 
     def run(self, evaluate=True):
         self.preprocess()
@@ -137,10 +140,8 @@ class Train_kmer_clf(object):
 
 
 class Test_streaming(object):
-    def __init__(self, kmer_to_index=None, clf=None, batchsize=None):
-        if not batchsize:
-            self.batchsize = 10
-
+    def __init__(self, kmer_to_index=None, clf=None, batchsize=10):
+        self.batchsize = batchsize
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
         self.clf = clf
@@ -152,8 +153,6 @@ class Test_streaming(object):
             mkdirCmd = "mkdir %s" % (self.pathtosave)
             os.system(mkdirCmd)
 
-
-
     def create_sparse_coos(self, cols, rows, datas, y_test, col, row, data, y):
         cols.extend(col)
         rows.extend(row)
@@ -162,11 +161,20 @@ class Test_streaming(object):
 
         return cols, rows, datas, y_test
 
-    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds):
-        X_test = sp.csr_matrix((datas, (rows, cols)), shape=(self.batchsize, len(self.kmer_to_index)), dtype=np.int8)
+    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, batch):
+        X_test = sp.csr_matrix((datas, (rows, cols)), shape=(batch, len(self.kmer_to_index)), dtype=np.int8)
         y_preds.extend(self.clf.predict_proba(X_test))
 
         return y_preds
+
+
+
+    def parse_and_map_kmers(self, fastaname, batchnumber):
+        self.parse_kmers_dsk(fastaname)
+        y = fastaname[:5]
+        kmer_count = self.get_kmer_counts(fastaname)
+        cols, rows, datas = self.map_data_to_coords(kmer_count, batchnumber)
+        return cols, rows, datas, y
 
     def get_kmer_counts(self, fastaname):
         kmer_count = {}
@@ -179,13 +187,6 @@ class Test_streaming(object):
                 except:
                     print("line = " + line)
         return kmer_count
-    def parse_and_map_kmers(self, fastaname, batchnumber):
-        self.parse_kmers_dsk(fastaname)
-        y = fastaname[:5]
-        kmer_count=self.get_kmer_counts(fastaname)
-        cols, rows, datas=self.map_data_to_coords(self, kmer_count, batchnumber)
-        return cols, rows, datas, y
-
     def map_data_to_coords(self, kmer_count, batchnumber):
         rows = []
         data = []
@@ -202,12 +203,12 @@ class Test_streaming(object):
         return columns, rows, data
 
     def parse_kmers_dsk(self, fastaname):
-        kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (os.path.join(self.testdir, fastaname),os.path.join(self.pathtotemp, fastaname), cfg.len_kmers)
+        kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (
+        os.path.join(self.testdir, fastaname), os.path.join(self.pathtotemp, fastaname), cfg.len_kmers)
         os.system(kmerCmd)
-        outputCmd = "dsk2ascii -file %s -out  %s" % (os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
+        outputCmd = "dsk2ascii -file %s -out  %s" % (
+        os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
         os.system(outputCmd)
-
-
 
     def evaluate_and_dump(self, y_preds, y_test):
         le = preprocessing.LabelEncoder()
@@ -222,8 +223,9 @@ class Test_streaming(object):
         print("*** ROC AUC = ***")
         print(self.score["ROC_AUC"])
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"),"wb") as f:
-            pickle.dump({"classifier": self.clf,"features": self.kmer_to_index,"y_pred": y_preds,"y_true": y_test},f, protocol=4)
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_true": y_test},
+                        f, protocol=4)
 
     def clean_temp_directories(self):
         cleankmertempcmd = "rm -rf %s" % (self.pathtotemp)
@@ -240,24 +242,25 @@ class Test_streaming(object):
         y_preds = []
 
         while remaining > 0:
-            batchiter=0
+            batchiter = 0
             batch = min(remaining, self.batchsize)
             cols = []
             rows = []
             datas = []
-
-            for file in files[fileindex : fileindex + batch]:
-                col, row, data, y = self.parse_and_map_kmers(file, iter)
-                cols, rows, datas, y_test=self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
+            print(batch)
+            for file in files[fileindex: fileindex + batch]:
+                col, row, data, y = self.parse_and_map_kmers(file, batchiter)
+                cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
                 batchiter += 1
-                fileindex += 1
+
                 remaining -= 1
+            fileindex += batch
+            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batch)
 
-            y_preds=self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds)
-
+        print(y_preds)
+        print(y_test)
         self.evaluate_and_dump(y_preds, y_test)
         self.clean_temp_directories()
-
 
 # if cfg.model == "rf":
 #     clf = ensemble.RandomForestClassifier()
@@ -279,4 +282,3 @@ class Test_streaming(object):
 #
 # test = TestStreamingBatch(clf=clf, kmer_to_index=kmer_to_index)
 # test.run()
-

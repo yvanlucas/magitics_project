@@ -36,7 +36,12 @@ def train_test_model():
     test.run()
 
 
-if __name__ == "__main__":
-    create_trainDB()
-    train_test_model()
+with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'rb') as f:
+    dic=pickle.load(f)
+
+test=learning.Test_streaming( kmer_to_index=dic['features'], clf=dic['classifier'], batchsize=10,)
+test.run()
+#if __name__ == "__main__":
+  #  create_trainDB()
+ #   train_test_model()
 
