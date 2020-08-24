@@ -1,6 +1,7 @@
 import pyscm
 from sklearn import ensemble
-
+import os
+import pickle
 import config as cfg
 import data
 import learning
@@ -24,10 +25,14 @@ def train_test_model():
         clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
         param_grid = cfg.gradient_grid
 
-    train=learning.Train_kmer_clf()
-    train.run(evaluate=False)
+    # train=learning.Train_kmer_clf(clf=clf, param_grid=param_grid)
+    # train.run(evaluate=False)
 
-    test=learning.Test_streaming(batchsize=10, kmer_to_index=train.kmer_to_index, clf=train.cv_clf)
+    with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'rb') as f:
+        dic=pickle.load(f)
+
+    test=learning.Test_streaming(batchsize=10, kmer_to_index=dic['features'], clf=dic['classifier'])
+ #   test=learning.Test_streaming(batchsize=10, kmer_to_index=train.kmer_to_index, clf=train.cv_clf)
     test.run()
 
 
