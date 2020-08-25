@@ -224,8 +224,22 @@ class Test_streaming(object):
         print(self.score["ROC_AUC"])
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
-            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_true": y_test},
+            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_true": y_test, "score":self.score},
                         f, protocol=4)
+
+    def write_report(self):
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), "w") as txt:
+            txt.write(cfg.xp_name + "\n\n")
+            txt.write(str(self.score) + "\n")
+            txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
+            txt.write("Model = " + str(self.clf) + "\n")
+            #txt.write("Param_grid = " + str(self.param_grid) + "\n")
+            txt.write("\n Relevant kmers : \n")
+            if cfg.model == "rf" or cfg.model == "gradient":
+                featimp = self.clf.best_estimator_.feature_importances_
+                kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
+                for kmer in kmers:
+                    txt.write(str(kmer) + "\n")
 
     def clean_temp_directories(self):
         cleankmertempcmd = "rm -rf %s" % (self.pathtotemp)
@@ -260,6 +274,7 @@ class Test_streaming(object):
         print(y_preds)
         print(y_test)
         self.evaluate_and_dump(y_preds, y_test)
+        self.write_report()
         self.clean_temp_directories()
 
 # if cfg.model == "rf":
