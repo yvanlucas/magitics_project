@@ -233,6 +233,7 @@ class Test_streaming(object):
             txt.write(str(self.score) + "\n")
             txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
             txt.write("Model = " + str(self.clf) + "\n")
+            txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
             #txt.write("Param_grid = " + str(self.param_grid) + "\n")
             txt.write("\n Relevant kmers : \n")
             if cfg.model == "rf" or cfg.model == "gradient":

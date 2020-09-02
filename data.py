@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+from Bio import SeqIO
 
 import config as cfg
 
@@ -146,6 +147,7 @@ class Kmercount_to_matrix(object):
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, "kmerdicts.pkl"), "wb") as f:
             pickle.dump(self.kmerdicts, f, protocol=4)
+
 
 # kmergenerator = KmersCounts2Dataframe()
 # kmergenerator.iteratefastas()

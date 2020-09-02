@@ -25,7 +25,7 @@ def train_test_model():
         clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
         param_grid = cfg.gradient_grid
 
-    # train=learning.Train_kmer_clf(clf=clf, param_grid=param_grid)
+    # train=learning.Train_kmer_clf(classifier=clf, param_grid=param_grid)
     # train.run(evaluate=False)
 
     with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'rb') as f:
