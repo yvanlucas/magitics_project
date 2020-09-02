@@ -130,23 +130,21 @@ class Kmercount_to_matrix(object):
         self.kmerdicts = {}
         self.labels = []
         self.strains = []
-        for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
-            for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data, dirname)):
-                kmer = Kmer_parser(os.path.join(dirname, filename))
-                kmer.parse_kmers_dsk()
-                kmer.count_kmers_dsk()
-
-                self.strains.append(kmer.strainnumber)
-                self.labels.append(kmer.label)
-
-                self.extend_kmerdicts(kmer)
-                self.clean_temp_directories(kmer)
+        #for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+        for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+            kmer = Kmer_parser(os.path.join(filename))
+            kmer.parse_kmers_dsk()
+            kmer.count_kmers_dsk()
+            self.strains.append(kmer.strainnumber)
+            self.labels.append(kmer.label)
+            self.extend_kmerdicts(kmer)
+            self.clean_temp_directories(kmer)
 
         rows, cols, data = self.create_sparse_coos()
         self.populate_sparse_matrix(rows, cols, data)
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, "kmerdicts.pkl"), "wb") as f:
-            pickle.dump(self.kmerdicts, f, protocol=4)
+
+
 
 
 # kmergenerator = KmersCounts2Dataframe()

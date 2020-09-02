@@ -52,12 +52,18 @@ class Train_kmer_clf(object):
 
     def fit(self, X_train, y_train):
         self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2,
-                                                   scoring="accuracy", n_jobs=-1)
+                                                   scoring="accuracy", n_jobs=4)
         self.cv_clf.fit(X_train, y_train)
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'wb') as f:
             pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index}, f, protocol=4)
 
+    def prune_boosting(self):
+        featimp = self.cv_clf.best_estimator_.feature_importances_
+        kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
+
+        
+        return
     def predict(self, X_test):
         y_predict = self.cv_clf.predict_proba(X_test)
         return y_predict
@@ -79,8 +85,7 @@ class Train_kmer_clf(object):
                                   index="param_" + ls_params[0], columns="param_" + ls_params[1])
         ax = sns.heatmap(self.pvt)
         ax.set(ylabel=ls_params[0], xlabel=ls_params[1])
-        ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_gridCV_heatmap.png")
-                          )
+        ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_gridCV_heatmap.png"))
 
     def plot_boosting_learning_curve(self, X_test, y_test):
         if cfg.model == "gradient":
@@ -123,8 +128,8 @@ class Train_kmer_clf(object):
 
     def run(self, evaluate=True):
         self.preprocess()
-        X_train, X_test, y_train, y_test = self.split_train_test(testratio=0)
-        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
+        X_train, X_test, y_train, y_test = self.split_train_test(testratio=0.3)
+#        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
 
         self.fit(X_train, y_train)
 
@@ -145,8 +150,8 @@ class Test_streaming(object):
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
         self.clf = clf
-        self.pathtotemp = os.path.join(cfg.pathtoxp, "test-temp")
-        self.pathtosave = os.path.join(cfg.pathtoxp, "test-output")
+        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name, "test-temp")
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,"test-output")
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
             mkdirCmd = "mkdir %s" % (self.pathtotemp)
             os.system(mkdirCmd)
@@ -235,6 +240,7 @@ class Test_streaming(object):
             txt.write("Model = " + str(self.clf) + "\n")
             txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
             #txt.write("Param_grid = " + str(self.param_grid) + "\n")
+            txt.write("best params = " + str(self.clf.best_params_)+'\n')
             txt.write("\n Relevant kmers : \n")
             if cfg.model == "rf" or cfg.model == "gradient":
                 featimp = self.clf.best_estimator_.feature_importances_
@@ -264,13 +270,15 @@ class Test_streaming(object):
             datas = []
             print(batch)
             for file in files[fileindex: fileindex + batch]:
-                col, row, data, y = self.parse_and_map_kmers(file, batchiter)
-                cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
-                batchiter += 1
-
-                remaining -= 1
+                try:
+                    col, row, data, y = self.parse_and_map_kmers(file, batchiter)
+                    cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
+                    batchiter += 1
+                    remaining -= 1
+                except:
+                    remaining -=1
             fileindex += batch
-            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batch)
+            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batchiter)
 
         print(y_preds)
         print(y_test)
