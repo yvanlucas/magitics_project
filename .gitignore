@@ -4,6 +4,7 @@ venv
 sampleREADME.md
 slurm*
 pyscm
+test.py
 
 .idea
 __pycache__

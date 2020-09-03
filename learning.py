@@ -58,12 +58,7 @@ class Train_kmer_clf(object):
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'wb') as f:
             pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index}, f, protocol=4)
 
-    def prune_boosting(self):
-        featimp = self.cv_clf.best_estimator_.feature_importances_
-        kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
 
-        
-        return
     def predict(self, X_test):
         y_predict = self.cv_clf.predict_proba(X_test)
         return y_predict
@@ -166,12 +161,44 @@ class Test_streaming(object):
 
         return cols, rows, datas, y_test
 
-    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, batch):
+    def prune_boosting(self):
+        import difflib
+
+        # Select index of redundant kmers with lower importances
+        ls_index=[]
+        featimp = self.clf.best_estimator_.feature_importances_
+        kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
+        imps=[featimp[i] for i in np.nonzero(featimp)[0]]
+        index=[i for i in np.nonzero(featimp)[0]]
+        for kmer1, imp1,ind1 in zip(kmers, imps, index):
+            kmers_minus=kmers
+            kmers_minus.remove(kmer1)
+            imps_minus=imps
+            imps_minus.remove(imp1)
+            index_minus=index
+            index_minus.remove(ind1)
+            for kmer2, imp2, ind2 in zip(kmers_minus, imps_minus, index_minus):
+                similarity=difflib.SequenceMatcher(None, kmer1, kmer2).ratio()
+                if similarity >cfg.pruning_tresh:
+                    if imp1> imp2:
+                        ls_index.append(ind2)
+                    elif imp2>imp1:
+                        ls_index.append(ind1)
+
+        return list(set(ls_index))
+
+    def predict_pruned(self, X_test, ls_index):
+        cumpred=np.array([x for x in self.clf.best_estimator_.staged_decision_function(X_test)])[:,:,0]
+        preds_out = cumpred[-1, :]
+        for i in ls_index:  # i can't be 0 but who would prune first tree of boosting
+            preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
+        return preds_out
+
+    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, batch, ls_index):
         X_test = sp.csr_matrix((datas, (rows, cols)), shape=(batch, len(self.kmer_to_index)), dtype=np.int8)
-        y_preds.extend(self.clf.predict_proba(X_test))
-
+        #y_preds.extend(self.clf.predict_proba(X_test)[:, 1])
+        y_preds.extend(self.predict_pruned(X_test, ls_index))
         return y_preds
-
 
 
     def parse_and_map_kmers(self, fastaname, batchnumber):
@@ -192,6 +219,7 @@ class Test_streaming(object):
                 except:
                     print("line = " + line)
         return kmer_count
+
     def map_data_to_coords(self, kmer_count, batchnumber):
         rows = []
         data = []
@@ -221,10 +249,10 @@ class Test_streaming(object):
 
         y_preds = np.vstack(y_preds)
         self.score = {}
-        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds[:, 1])
-        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds[:, 1].round())
-        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds[:, 1])
-        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds[:, 1])
+        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds)
+        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds.round())
+        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds)
+        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds)
         print("*** ROC AUC = ***")
         print(self.score["ROC_AUC"])
 
@@ -262,6 +290,7 @@ class Test_streaming(object):
         y_test = []
         y_preds = []
 
+        ls_index=self.prune_boosting()
         while remaining > 0:
             batchiter = 0
             batch = min(remaining, self.batchsize)
@@ -278,10 +307,8 @@ class Test_streaming(object):
                 except:
                     remaining -=1
             fileindex += batch
-            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batchiter)
+            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batchiter, ls_index)
 
-        print(y_preds)
-        print(y_test)
         self.evaluate_and_dump(y_preds, y_test)
         self.write_report()
         self.clean_temp_directories()
