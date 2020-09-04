@@ -166,7 +166,7 @@ class Test_streaming(object):
 
         # Select index of redundant kmers with lower importances
         ls_index=[]
-        featimp = self.clf.best_estimator_.feature_importances_
+        featimp = self.clf.feature_importances_
         kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
         imps=[featimp[i] for i in np.nonzero(featimp)[0]]
         index=[i for i in np.nonzero(featimp)[0]]
@@ -188,7 +188,7 @@ class Test_streaming(object):
         return list(set(ls_index))
 
     def predict_pruned(self, X_test, ls_index):
-        cumpred=np.array([x for x in self.clf.best_estimator_.staged_decision_function(X_test)])[:,:,0]
+        cumpred=np.array([x for x in self.clf.staged_decision_function(X_test)])[:,:,0]
         preds_out = cumpred[-1, :]
         for i in ls_index:  # i can't be 0 but who would prune first tree of boosting
             preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
@@ -266,12 +266,12 @@ class Test_streaming(object):
             txt.write(str(self.score) + "\n")
             txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
             txt.write("Model = " + str(self.clf) + "\n")
-            txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
+            #txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
             #txt.write("Param_grid = " + str(self.param_grid) + "\n")
-            txt.write("best params = " + str(self.clf.best_params_)+'\n')
+            #txt.write("best params = " + str(self.clf.best_params_)+'\n')
             txt.write("\n Relevant kmers : \n")
             if cfg.model == "rf" or cfg.model == "gradient":
-                featimp = self.clf.best_estimator_.feature_importances_
+                featimp = self.clf.feature_importances_
                 kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
                 for kmer in kmers:
                     txt.write(str(kmer) + "\n")
@@ -304,6 +304,7 @@ class Test_streaming(object):
                     cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
                     batchiter += 1
                     remaining -= 1
+
                 except:
                     remaining -=1
             fileindex += batch
