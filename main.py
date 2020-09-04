@@ -7,6 +7,7 @@ import data
 import learning
 
 
+
 def create_trainDB():
     datas = data.Kmercount_to_matrix()
     datas.run()
@@ -38,7 +39,8 @@ def train_test_model():
 
 
 if __name__ == "__main__":
-    create_trainDB()
+    arser = argparse.ArgumentParser(description='Process some integers.')
+    create_trainDB(arg)
     train_test_model()
 
 
