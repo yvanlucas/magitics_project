@@ -171,15 +171,9 @@ class Test_streaming(object):
         imps=[featimp[i] for i in np.nonzero(featimp)[0]]
         index=[i for i in np.nonzero(featimp)[0]]
         for kmer1, imp1,ind1 in zip(kmers, imps, index):
-            kmers_minus=kmers
-            kmers_minus.remove(kmer1)
-            imps_minus=imps
-            imps_minus.remove(imp1)
-            index_minus=index
-            index_minus.remove(ind1)
-            for kmer2, imp2, ind2 in zip(kmers_minus, imps_minus, index_minus):
+            for kmer2, imp2, ind2 in zip(kmers, imps, index):
                 similarity=difflib.SequenceMatcher(None, kmer1, kmer2).ratio()
-                if similarity >cfg.pruning_tresh:
+                if similarity >cfg.pruning_tresh and kmer1!= kmer2:
                     if imp1> imp2:
                         ls_index.append(ind2)
                     elif imp2>imp1:
