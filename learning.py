@@ -186,11 +186,11 @@ class Test_streaming(object):
             preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
         return preds_out
 
-    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, batch, ls_index):
+    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, y_pruned, batch, ls_index):
         X_test = sp.csr_matrix((datas, (rows, cols)), shape=(batch, len(self.kmer_to_index)), dtype=np.int8)
-        #y_preds.extend(self.clf.predict_proba(X_test)[:, 1])
-        y_preds.extend(self.predict_pruned(X_test, ls_index))
-        return y_preds
+        y_preds.extend(self.clf.predict_proba(X_test)[:, 1])
+        y_pruned.extend(self.predict_pruned(X_test, ls_index))
+        return y_preds, y_pruned
 
 
     def parse_and_map_kmers(self, fastaname, batchnumber):
@@ -235,7 +235,7 @@ class Test_streaming(object):
         os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
         os.system(outputCmd)
 
-    def evaluate_and_dump(self, y_preds, y_test):
+    def evaluate_and_dump(self, y_preds, y_test, pruned=False):
         le = preprocessing.LabelEncoder()
         y_test = le.fit_transform(y_test)
 
@@ -248,13 +248,14 @@ class Test_streaming(object):
         print("*** ROC AUC = ***")
         print(self.score["ROC_AUC"])
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
-            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_true": y_test, "score":self.score},
-                        f, protocol=4)
+        self.write_report(pruned)
 
-    def write_report(self):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), "w") as txt:
-            txt.write(cfg.xp_name + "\n\n")
+
+    def write_report(self, pruned=False):
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), "a") as txt:
+            if pruned:
+                txt.write('PRUNED' + "\n\n")
+            txt.write(cfg.xp_name +"/" +cfg.id + "\n\n")
             txt.write(str(self.score) + "\n")
             txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
             txt.write("Model = " + str(self.clf) + "\n")
@@ -281,6 +282,7 @@ class Test_streaming(object):
         fileindex = 0
         y_test = []
         y_preds = []
+        y_pruned =[]
 
         ls_index=self.prune_boosting()
         while remaining > 0:
@@ -300,10 +302,14 @@ class Test_streaming(object):
                 except:
                     remaining -=1
             fileindex += batch
-            y_preds = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, batchiter, ls_index)
+            y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, y_pruned, batchiter, ls_index)
 
         self.evaluate_and_dump(y_preds, y_test)
-        self.write_report()
+        self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        #self.write_report()
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_pruned":y_pruned,"y_true": y_test, "score":self.score},
+                        f, protocol=4)
         self.clean_temp_directories()
 
 # if cfg.model == "rf":
