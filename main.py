@@ -39,8 +39,7 @@ def train_test_model():
 
 
 if __name__ == "__main__":
-    arser = argparse.ArgumentParser(description='Process some integers.')
-    create_trainDB(arg)
+    create_trainDB()
     train_test_model()
 
 

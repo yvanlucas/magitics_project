@@ -144,7 +144,7 @@ class Test_streaming(object):
         self.batchsize = batchsize
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
-        self.clf = clf
+        self.clf = clf.best_estimator_
         self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name, "test-temp")
         self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,"test-output")
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
