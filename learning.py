@@ -20,11 +20,9 @@ class Train_kmer_clf(object):
         #     self.dataframe=table.to_pandas()
         #     self.dataframe.transpose()
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, "kmers_mats.pkl"), "rb") as f:
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id , "kmers_mats.pkl"), "rb") as f:
             [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
 
-        mkdircmd = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
-        os.system(mkdircmd)
 
     def preprocess(self):
         # to_drop = ["label", "strain"]

@@ -97,7 +97,10 @@ class Kmercount_to_matrix(object):
         n_strains = len(self.strains)
         self.mat = sp.csr_matrix((data, (rows, cols)), shape=(n_strains, len(self.kmer_to_index)), dtype=np.int8)
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, "kmers_mats.pkl"), "wb") as f:
+        mkdircmd = "mkdir %s" % (os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id))
+        os.system(mkdircmd)
+
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id, "kmers_mats.pkl"), "wb") as f:
             pickle.dump([self.mat, self.labels, self.strain_to_index, self.kmer_to_index], f, protocol=4)
 
     def extend_kmerdicts(self, kmer):
