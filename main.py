@@ -29,7 +29,7 @@ def train_test_model():
 
 
 if __name__ == "__main__":
-    create_trainDB()
+    #create_trainDB()
     train_test_model()
 
 

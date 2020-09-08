@@ -45,6 +45,7 @@ class Kmer_parser(object):
                     print(kmercount, kmerID)
 
     def parse_kmers_dsk(self):
+        print(self.pathtofasta)
         kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (self.pathtofasta, self.pathtotemp, self.len_kmers)
         os.system(kmerCmd)
         outputCmd = "dsk2ascii -file %s -out  %s" % (self.pathtotemp, self.pathtosave)

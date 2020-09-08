@@ -132,7 +132,7 @@ class Train_kmer_clf(object):
 
     def run(self, evaluate=True):
         self.preprocess()
-        X_train, X_test, y_train, y_test = self.split_train_test(testratio=0.3)
+        X_train, X_test, y_train, y_test = self.split_train_test(testratio=0.0)
 #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
 
         self.fit(X_train, y_train)
