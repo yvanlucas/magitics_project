@@ -16,17 +16,7 @@ def create_trainDB():
 
 
 def train_test_model():
-    if cfg.model == "rf":
-        clf = ensemble.RandomForestClassifier()
-        param_grid = cfg.rf_grid
-    elif cfg.model == "SCM":
-        clf = pyscm.SetCoveringMachineClassifier()
-        param_grid = cfg.SCM_grid
-    elif cfg.model == "gradient":
-        clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-        param_grid = cfg.gradient_grid
-
-    train=learning.Train_kmer_clf(classifier=clf, param_grid=param_grid)
+    train=learning.Train_kmer_clf()
     train.run(evaluate=False)
 
 

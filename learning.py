@@ -11,9 +11,20 @@ import config as cfg
 
 
 class Train_kmer_clf(object):
-    def __init__(self, dataframe=None, classifier=None, param_grid=None):
+    def __init__(self, dataframe=None, clf=None, param_grid=None):
+
+        if cfg.model == "rf":
+            clf = ensemble.RandomForestClassifier()
+            param_grid = cfg.rf_grid
+        elif cfg.model == "SCM":
+            clf = pyscm.SetCoveringMachineClassifier()
+            param_grid = cfg.SCM_grid
+        elif cfg.model == "gradient":
+            clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+            param_grid = cfg.gradient_grid
+
         self.mat = dataframe
-        self.clf = classifier
+        self.clf = clf
         self.param_grid = param_grid
         # if self.dataframe == None:
         #     table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
