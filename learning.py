@@ -151,9 +151,13 @@ class Train_kmer_clf(object):
 class Test_streaming(object):
     def __init__(self, kmer_to_index=None, clf=None, batchsize=10):
         self.batchsize = 1
+
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
-        self.clf = clf.best_estimator_
+        try:
+            self.clf = clf.best_estimator_
+        except:
+            self.clf=clf
         self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name, "test-temp")
         self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,"test-output")
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
@@ -310,8 +314,11 @@ class Test_streaming(object):
                     cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
                     batchiter += 1
                     remaining -= 1
-                    y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
+                    try:
+                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
                                                                                           y_pruned, batchiter, ls_index)
+                    except:
+                        y_test.pop([-1])
                 except:
                     print('issue with testing file: '+file)
                     remaining -=1
