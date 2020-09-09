@@ -149,7 +149,7 @@ class Train_kmer_clf(object):
 
 
 class Test_streaming(object):
-    def __init__(self, kmer_to_index=None, clf=None, batchsize=10):
+    def __init__(self, kmer_to_index=None, clf=None, batchsize=1):
         self.batchsize = batchsize
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
