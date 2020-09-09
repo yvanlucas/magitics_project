@@ -148,6 +148,9 @@ class Kmercount_to_matrix(object):
         self.populate_sparse_matrix(rows, cols, data)
 
 
+class gene_defining_kmers(object):
+    def __init__(self):
+        return
 
 
 

@@ -150,7 +150,7 @@ class Train_kmer_clf(object):
 
 class Test_streaming(object):
     def __init__(self, kmer_to_index=None, clf=None, batchsize=10):
-        self.batchsize = batchsize
+        self.batchsize = 1
         self.testdir = os.path.join(cfg.pathtodata, cfg.testdir)
         self.kmer_to_index = kmer_to_index
         self.clf = clf.best_estimator_
@@ -299,21 +299,27 @@ class Test_streaming(object):
         while remaining > 0:
             batchiter = 0
             batch = min(remaining, self.batchsize)
-            cols = []
-            rows = []
+
             datas = []
             print(batch)
             for file in files[fileindex: fileindex + batch]:
                 try:
+                    cols = []
+                    rows = []
                     col, row, data, y = self.parse_and_map_kmers(file, batchiter)
                     cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
                     batchiter += 1
                     remaining -= 1
-
+                    y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
+                                                                                          y_pruned, batchiter, ls_index)
                 except:
+                    print('issue with testing file: '+file)
                     remaining -=1
+                print(np.shape(y_test))
+                print(np.shape(y_preds))
+
             fileindex += batch
-            y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds, y_pruned, batchiter, ls_index)
+
 
         self.evaluate_and_dump(y_preds, y_test)
         self.evaluate_and_dump(y_pruned, y_test, pruned=True)
