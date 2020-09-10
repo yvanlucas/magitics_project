@@ -6,7 +6,7 @@ import pandas as pd
 import pyscm
 import scipy.sparse as sp
 import seaborn as sns
-from sklearn import (ensemble, feature_selection, metrics, model_selection, preprocessing)
+from sklearn import (ensemble, tree, feature_selection, metrics, model_selection, preprocessing)
 import config as cfg
 
 
@@ -22,6 +22,9 @@ class Train_kmer_clf(object):
             elif cfg.model == "gradient":
                 clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
                 param_grid = cfg.gradient_grid
+            elif cfg.model == 'Ada':
+                clf = ensemble.AdaBoostClassifier()
+                param_grid=cfg.ada_grid
 
         self.mat = dataframe
         self.clf = clf
@@ -155,9 +158,10 @@ class Test_streaming(object):
         try:
             self.clf = clf.best_estimator_
         except:
-            self.clf = clf
-        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, "test-temp")
-        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, "test-output")
+            self.clf=clf
+        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name,cfg.id, "test-temp")
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id,"test-output")
+
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
             mkdirCmd = "mkdir %s" % (self.pathtotemp)
             os.system(mkdirCmd)
@@ -221,7 +225,7 @@ class Test_streaming(object):
                     [ID, count] = line.split(" ")
                     kmer_count[str(ID)] = int(count)
                 except:
-                    print("line = " + line)
+                    print('line = {0}'.format(line))
         return kmer_count
 
     def map_data_to_coords(self, kmer_count, batchnumber):
@@ -299,7 +303,6 @@ class Test_streaming(object):
         while remaining > 0:
             batchiter = 0
             batch = min(remaining, self.batchsize)
-
             datas = []
             print(batch)
             for file in files[fileindex: fileindex + batch]:
@@ -311,17 +314,19 @@ class Test_streaming(object):
                     batchiter += 1
                     remaining -= 1
                     try:
-                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas,
-                                                                                              y_preds,
-                                                                                              y_pruned, batchiter,
-                                                                                              ls_index)
-                    except:
+                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
+                                                                                          y_pruned, batchiter, ls_index)
+                    except Exception as e: 
+                        print(e)
                         y_test.pop([-1])
-                except:
-                    print('issue with testing file: ' + file)
-                    print(np.shape(y_test))
-                    print(np.shape(y_preds))
-                    remaining -= 1
+                except Exception as e: 
+                    print(e)
+                    print('issue with testing file: '+file)
+                    remaining -=1
+                    batchiter += 1
+
+                print(np.shape(y_test[-1]))
+                print(np.shape(y_preds[-1]))
                 print(np.shape(y_test))
                 print(np.shape(y_preds))
 
