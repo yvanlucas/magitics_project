@@ -12,16 +12,16 @@ import config as cfg
 
 class Train_kmer_clf(object):
     def __init__(self, dataframe=None, clf=None, param_grid=None):
-
-        if cfg.model == "rf":
-            clf = ensemble.RandomForestClassifier()
-            param_grid = cfg.rf_grid
-        elif cfg.model == "SCM":
-            clf = pyscm.SetCoveringMachineClassifier()
-            param_grid = cfg.SCM_grid
-        elif cfg.model == "gradient":
-            clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-            param_grid = cfg.gradient_grid
+        if clf==None:
+            if cfg.model == "rf":
+                clf = ensemble.RandomForestClassifier()
+                param_grid = cfg.rf_grid
+            elif cfg.model == "SCM":
+                clf = pyscm.SetCoveringMachineClassifier()
+                param_grid = cfg.SCM_grid
+            elif cfg.model == "gradient":
+                clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+                param_grid = cfg.gradient_grid
 
         self.mat = dataframe
         self.clf = clf
@@ -31,9 +31,8 @@ class Train_kmer_clf(object):
         #     self.dataframe=table.to_pandas()
         #     self.dataframe.transpose()
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id , "kmers_mats.pkl"), "rb") as f:
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_mats.pkl"), "rb") as f:
             [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
-
 
     def preprocess(self):
         # to_drop = ["label", "strain"]
@@ -66,7 +65,6 @@ class Train_kmer_clf(object):
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'wb') as f:
             pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index}, f, protocol=4)
-
 
     def predict(self, X_test):
         y_predict = self.cv_clf.predict_proba(X_test)
@@ -133,7 +131,7 @@ class Train_kmer_clf(object):
     def run(self, evaluate=True):
         self.preprocess()
         X_train, X_test, y_train, y_test = self.split_train_test(testratio=0.0)
-#        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
+        #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
 
         self.fit(X_train, y_train)
 
@@ -157,9 +155,9 @@ class Test_streaming(object):
         try:
             self.clf = clf.best_estimator_
         except:
-            self.clf=clf
-        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name, "test-temp")
-        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,"test-output")
+            self.clf = clf
+        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, "test-temp")
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, "test-output")
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
             mkdirCmd = "mkdir %s" % (self.pathtotemp)
             os.system(mkdirCmd)
@@ -178,24 +176,24 @@ class Test_streaming(object):
         import difflib
 
         # Select index of redundant kmers with lower importances
-        ls_index=[]
+        ls_index = []
         featimp = self.clf.feature_importances_
         kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
-        imps=[featimp[i] for i in np.nonzero(featimp)[0]]
-        index=[i for i in np.nonzero(featimp)[0]]
-        for kmer1, imp1,ind1 in zip(kmers, imps, index):
+        imps = [featimp[i] for i in np.nonzero(featimp)[0]]
+        index = [i for i in np.nonzero(featimp)[0]]
+        for kmer1, imp1, ind1 in zip(kmers, imps, index):
             for kmer2, imp2, ind2 in zip(kmers, imps, index):
-                similarity=difflib.SequenceMatcher(None, kmer1, kmer2).ratio()
-                if similarity >cfg.pruning_tresh and kmer1!= kmer2:
-                    if imp1> imp2:
+                similarity = difflib.SequenceMatcher(None, kmer1, kmer2).ratio()
+                if similarity > cfg.pruning_tresh and kmer1 != kmer2:
+                    if imp1 > imp2:
                         ls_index.append(ind2)
-                    elif imp2>imp1:
+                    elif imp2 > imp1:
                         ls_index.append(ind1)
 
         return list(set(ls_index))
 
     def predict_pruned(self, X_test, ls_index):
-        cumpred=np.array([x for x in self.clf.staged_decision_function(X_test)])[:,:,0]
+        cumpred = np.array([x for x in self.clf.staged_decision_function(X_test)])[:, :, 0]
         preds_out = cumpred[-1, :]
         for i in ls_index:  # i can't be 0 but who would prune first tree of boosting
             preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
@@ -206,7 +204,6 @@ class Test_streaming(object):
         y_preds.extend(self.clf.predict_proba(X_test)[:, 1])
         y_pruned.extend(self.predict_pruned(X_test, ls_index))
         return y_preds, y_pruned
-
 
     def parse_and_map_kmers(self, fastaname, batchnumber):
         self.parse_kmers_dsk(fastaname)
@@ -244,10 +241,10 @@ class Test_streaming(object):
 
     def parse_kmers_dsk(self, fastaname):
         kmerCmd = "dsk -file %s -out %s -kmer-size %d -abundance-min 1 -verbose 0" % (
-        os.path.join(self.testdir, fastaname), os.path.join(self.pathtotemp, fastaname), cfg.len_kmers)
+            os.path.join(self.testdir, fastaname), os.path.join(self.pathtotemp, fastaname), cfg.len_kmers)
         os.system(kmerCmd)
         outputCmd = "dsk2ascii -file %s -out  %s" % (
-        os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
+            os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
         os.system(outputCmd)
 
     def evaluate_and_dump(self, y_preds, y_test, pruned=False):
@@ -265,18 +262,17 @@ class Test_streaming(object):
 
         self.write_report(pruned)
 
-
     def write_report(self, pruned=False):
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), "a") as txt:
             if pruned:
                 txt.write('PRUNED' + "\n\n")
-            txt.write(cfg.xp_name +"/" +cfg.id + "\n\n")
+            txt.write(cfg.xp_name + "/" + cfg.id + "\n\n")
             txt.write(str(self.score) + "\n")
             txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
             txt.write("Model = " + str(self.clf) + "\n")
-            #txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
-            #txt.write("Param_grid = " + str(self.param_grid) + "\n")
-            #txt.write("best params = " + str(self.clf.best_params_)+'\n')
+            # txt.write("Best_params = "+str(self.clf.best_params_)+"\n")
+            # txt.write("Param_grid = " + str(self.param_grid) + "\n")
+            # txt.write("best params = " + str(self.clf.best_params_)+'\n')
             txt.write("\n Relevant kmers : \n")
             if cfg.model == "rf" or cfg.model == "gradient":
                 featimp = self.clf.feature_importances_
@@ -297,9 +293,9 @@ class Test_streaming(object):
         fileindex = 0
         y_test = []
         y_preds = []
-        y_pruned =[]
+        y_pruned = []
 
-        ls_index=self.prune_boosting()
+        ls_index = self.prune_boosting()
         while remaining > 0:
             batchiter = 0
             batch = min(remaining, self.batchsize)
@@ -315,25 +311,30 @@ class Test_streaming(object):
                     batchiter += 1
                     remaining -= 1
                     try:
-                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
-                                                                                          y_pruned, batchiter, ls_index)
+                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas,
+                                                                                              y_preds,
+                                                                                              y_pruned, batchiter,
+                                                                                              ls_index)
                     except:
                         y_test.pop([-1])
                 except:
-                    print('issue with testing file: '+file)
-                    remaining -=1
+                    print('issue with testing file: ' + file)
+                    print(np.shape(y_test))
+                    print(np.shape(y_preds))
+                    remaining -= 1
                 print(np.shape(y_test))
                 print(np.shape(y_preds))
 
             fileindex += batch
 
-
         self.evaluate_and_dump(y_preds, y_test)
         self.evaluate_and_dump(y_pruned, y_test, pruned=True)
-        #self.write_report()
+        # self.write_report()
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
-            pickle.dump({"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_pruned":y_pruned,"y_true": y_test, "score":self.score},
-                        f, protocol=4)
+            pickle.dump(
+                {"classifier": self.clf, "features": self.kmer_to_index, "y_pred": y_preds, "y_pruned": y_pruned,
+                 "y_true": y_test, "score": self.score},
+                f, protocol=4)
         self.clean_temp_directories()
 
 # if cfg.model == "rf":

@@ -154,6 +154,8 @@ class gene_defining_kmers(object):
 
 
 
+
+
 # kmergenerator = KmersCounts2Dataframe()
 # kmergenerator.iteratefastas()
 # kmergenerator.create_sparse_matrix()
