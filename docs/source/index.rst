@@ -1,0 +1,24 @@
+.. MAGITICS documentation master file, created by
+   sphinx-quickstart on Thu Sep 10 15:57:50 2020.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to MAGITICS's documentation!
+====================================
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
+   installation
+   firstproject
+   syntax
+   githubpages
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

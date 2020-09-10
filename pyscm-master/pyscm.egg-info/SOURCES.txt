@@ -1,0 +1,17 @@
+README.md
+setup.py
+cpp_extensions/solver.cpp
+cpp_extensions/utility_python_bindings.cpp
+pyscm/__init__.py
+pyscm/model.py
+pyscm/rules.py
+pyscm/scm.py
+pyscm/utils.py
+pyscm.egg-info/PKG-INFO
+pyscm.egg-info/SOURCES.txt
+pyscm.egg-info/dependency_links.txt
+pyscm.egg-info/requires.txt
+pyscm.egg-info/top_level.txt
+pyscm/tests/__init__.py
+pyscm/tests/test_sklearn_compatibility.py
+pyscm/tests/test_utility.py
