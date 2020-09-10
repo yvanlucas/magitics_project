@@ -6,7 +6,7 @@ import pandas as pd
 import pyscm
 import scipy.sparse as sp
 import seaborn as sns
-from sklearn import (ensemble, feature_selection, metrics, model_selection, preprocessing)
+from sklearn import (ensemble, tree, feature_selection, metrics, model_selection, preprocessing)
 import config as cfg
 
 
@@ -20,7 +20,7 @@ class Train_kmer_clf(object):
             clf = pyscm.SetCoveringMachineClassifier()
             param_grid = cfg.SCM_grid
         elif cfg.model == "gradient":
-            clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+            clf = ensemble.AdaBoostClassifier(base_estimator=tree.DecisionTreeClassifier(max_features=None, max_depth=1))
             param_grid = cfg.gradient_grid
 
         self.mat = dataframe
@@ -158,8 +158,8 @@ class Test_streaming(object):
             self.clf = clf.best_estimator_
         except:
             self.clf=clf
-        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name, "test-temp")
-        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,"test-output")
+        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name,cfg.id, "test-temp")
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id,"test-output")
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
             mkdirCmd = "mkdir %s" % (self.pathtotemp)
             os.system(mkdirCmd)
@@ -317,11 +317,14 @@ class Test_streaming(object):
                     try:
                         y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
                                                                                           y_pruned, batchiter, ls_index)
-                    except:
+                    except Exception as e: 
+                        print(e)
                         y_test.pop([-1])
-                except:
+                except Exception as e: 
+                    print(e)
                     print('issue with testing file: '+file)
                     remaining -=1
+                    batchiter += 1
                 print(np.shape(y_test))
                 print(np.shape(y_preds))
 
