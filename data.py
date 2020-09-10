@@ -10,12 +10,15 @@ import config as cfg
 
 
 class Kmer_parser(object):
-    """
-    Object called in KmersCount2Dataframe class
+    '''
     Extract kmers using terminal softwares (DSK or Gerbil)
-    """
-
+    class called in KmersCount2Dataframe class
+    '''
     def __init__(self, fastaname):
+        '''
+
+        :param fastaname: name of the file from which kmers are parsed
+        '''
         self.pathtofasta = os.path.join(cfg.pathtodata, cfg.data, fastaname)
         self.strainnumber = self.pathtofasta.split('/')[-1][:-3]
         self.label = fastaname[:5]
@@ -26,6 +29,10 @@ class Kmer_parser(object):
         self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, "kmers", self.label + self.strainnumber)
 
     def parse_kmers_gerbil(self):
+        '''
+
+        :return:
+        '''
         kmerCmd = "gerbil -k %d  -l %d %s %s %s" % (self.len_kmers, self.min_abundance, self.pathtofasta, self.pathtotemp, self.pathtosavetemp)
         os.system(kmerCmd)
         tofastaCmd = "toFasta %s %d %s" % (self.pathtosavetemp, self.len_kmers, self.pathtosave)
