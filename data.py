@@ -187,5 +187,5 @@ class parse_genes_limits(object):
 
 
 
-gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, 'Resistant287.853.PATRIC.features.tab'))
-gene_limits.run()
+#gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, 'Resistant287.853.PATRIC.features.tab'))
+#gene_limits.run()

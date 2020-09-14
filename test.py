@@ -21,8 +21,6 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 cum_preds = np.array([x for x in clf.staged_decision_function(X_test)])[:, :, 0]
-cumprednew=np.delete(cum_preds, [4,5,6], 0)
-new=compute_loss(y_test, cumprednew)
 
 def prune_prediction(cum_pred, ls_index):
     preds_out=cum_preds[-1,:]

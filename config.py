@@ -5,7 +5,7 @@ xp_name = 'pseud_levo_31'
 #xp_name = 'esche_amox_31'
 
 
-mode='serv' #can be ['local', 'serv']
+mode='local' #can be ['local', 'serv']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
@@ -17,7 +17,7 @@ if mode == 'serv':
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
-    data='traindatabis'
+    data='traindata'
     testdir='test/test'
 
 # Kmer extraction parameters
@@ -50,4 +50,4 @@ def get_lenkmers():
 
 len_kmers= 20 #int(get_lenkmers())
 
-id='ADAkmers20_'+str(int(get_lenkmers()))
+#id='ADAkmers20_'+str(int(get_lenkmers()))
