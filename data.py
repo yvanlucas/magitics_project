@@ -155,14 +155,37 @@ class Kmercount_to_matrix(object):
         self.populate_sparse_matrix(rows, cols, data)
 
 
-class gene_defining_kmers(object):
-    def __init__(self):
+class parse_genes_limits(object):
+    def __init__(self, fastaname, dic_limits):
+        self.pathtofile = fastaname
+        self.dic_limits=dic_limits
+        self.strainnumber = self.pathtofile.split('/')[-1][:-20]
+
+    def get_genes_limit(self):
+        with open(self.pathtofile, 'r') as f:
+            lines=f.readlines()
+        count_contigs=0
+        for line in lines[:3]:
+            line=line.split('\t')
+            print(line)
+            if line[9] == '1':
+                count_contigs +=1
+            pgfam=line[-4]
+            limits = [(int(line[9]), int(line[10])), count_contigs]
+
+            if pgfam in self.dic_limits:
+                if self.strainnumber in self.dic_limits[pgfam]:
+                    self.dic_limits[pgfam][self.strainnumber].append(limits)
+                else:
+                    self.dic_limits[pgfam][self.strainnumber] = [limits]
+            else:
+                self.dic_limits[pgfam]= {self.strainnumber: [limits]}
         return
 
+    def run(self):
+        self.get_genes_limit()
 
 
 
-
-# kmergenerator = KmersCounts2Dataframe()
-# kmergenerator.iteratefastas()
-# kmergenerator.create_sparse_matrix()
+gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, 'Resistant287.853.PATRIC.features.tab'))
+gene_limits.run()
