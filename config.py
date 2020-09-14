@@ -2,16 +2,18 @@ import argparse
 # PATHs
 id='8'
 xp_name = 'pseud_levo_31'
+#xp_name = 'esche_amox_31'
 
 
-
-mode='local' #can be ['local', 'serv']
+mode='serv' #can be ['local', 'serv']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
     pathtodata='/scratch/MAGITICS_data/'
-    testdir=''
-    data = 'Pseudomonas_aeruginosa/levofloxacin/'
+    testdir='Pseudomonas_aeruginosa/levofloxacin/test/test'
+    #testdir='Escherichia_coli/test/test'
+    #data='Escherichia_coli/traindata/'
+    data = 'Pseudomonas_aeruginosa/levofloxacin/traindata/'
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
@@ -39,3 +41,13 @@ ada_grid =  {'n_estimators': [ 5, 10, 20]}
 
 pruning_tresh=0.9
 
+def get_lenkmers():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--len_kmers', type=int, default=31)
+    arg=parser.parse_args()
+    print(arg.len_kmers)
+    return arg.len_kmers
+
+len_kmers= 20 #int(get_lenkmers())
+
+id='ADAkmers20_'+str(int(get_lenkmers()))

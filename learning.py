@@ -304,9 +304,8 @@ class Test_streaming(object):
             batchiter = 0
             batch = min(remaining, self.batchsize)
             datas = []
-            print(batch)
             for file in files[fileindex: fileindex + batch]:
-                try:
+                
                     cols = []
                     rows = []
                     col, row, data, y = self.parse_and_map_kmers(file, batchiter)
