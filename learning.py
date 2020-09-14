@@ -305,24 +305,23 @@ class Test_streaming(object):
             batch = min(remaining, self.batchsize)
             datas = []
             for file in files[fileindex: fileindex + batch]:
-                
-                    cols = []
-                    rows = []
-                    col, row, data, y = self.parse_and_map_kmers(file, batchiter)
-                    cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
-                    batchiter += 1
-                    remaining -= 1
-                    try:
-                        y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
+                cols = []
+                rows = []
+                col, row, data, y = self.parse_and_map_kmers(file, batchiter)
+                cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
+                batchiter += 1
+                remaining -= 1
+                    #try:
+                y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
                                                                                           y_pruned, batchiter, ls_index)
-                    except Exception as e: 
-                        print(e)
-                        y_test.pop([-1])
-                except Exception as e: 
-                    print(e)
-                    print('issue with testing file: '+file)
-                    remaining -=1
-                    batchiter += 1
+                #     except Exception as e:
+                #         print(e)
+                #         y_test.pop([-1])
+                # except Exception as e:
+                #     print(e)
+                #     print('issue with testing file: '+file)
+                #     remaining -=1
+                #     batchiter += 1
 
                 print(np.shape(y_test[-1]))
                 print(np.shape(y_preds[-1]))
