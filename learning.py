@@ -168,13 +168,12 @@ class Test_streaming(object):
             mkdirCmd = "mkdir %s" % (self.pathtosave)
             os.system(mkdirCmd)
 
-    def create_sparse_coos(self, cols, rows, datas, y_test, col, row, data, y):
+    def create_sparse_coos(self, cols, rows, datas, col, row, data):
         cols.extend(col)
         rows.extend(row)
         datas.extend(data)
-        y_test.append(y)
 
-        return cols, rows, datas, y_test
+        return cols, rows, datas
 
     def prune_boosting(self):
         import difflib
@@ -198,16 +197,22 @@ class Test_streaming(object):
 
     def predict_pruned(self, X_test, ls_index):
         cumpred = np.array([x for x in self.clf.staged_decision_function(X_test)])[:, :, 0]
-        preds_out = cumpred[-1, :]
+        preds_out = cumpred[-1,:]
+
         for i in ls_index:  # i can't be 0 but who would prune first tree of boosting
-            preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
+            preds_out = preds_out - (cumpred[i - 1,:] - cumpred[i,:])
         return preds_out
 
-    def populate_sparse_matrix_and_append_prediction(self, cols, rows, datas, y_preds, y_pruned, batch, ls_index):
-        X_test = sp.csr_matrix((datas, (rows, cols)), shape=(batch, len(self.kmer_to_index)), dtype=np.int8)
-        y_preds.extend(self.clf.predict_proba(X_test)[:, 1])
+    def populate_sparse_matrix(self, cols, rows, datas, batch):
+        X_test = sp.csr_matrix((datas, (rows, cols)), shape=(batch, len(self.kmer_to_index)), dtype=np.int16)
+        return X_test
+
+    def append_prediction(self, X_test, y_preds, y_pruned, y_test, ls_index, y):
+        y_preds.extend(self.clf.predict_proba(X_test))
         y_pruned.extend(self.predict_pruned(X_test, ls_index))
-        return y_preds, y_pruned
+        y_test.append(y)
+
+        return y_preds, y_pruned, y_test
 
     def parse_and_map_kmers(self, fastaname, batchnumber):
         self.parse_kmers_dsk(fastaname)
@@ -257,10 +262,10 @@ class Test_streaming(object):
 
         y_preds = np.vstack(y_preds)
         self.score = {}
-        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds)
-        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds.round())
-        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds)
-        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds)
+        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds[:,-1])
+        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds[:,-1].round())
+        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds[:,-1])
+        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds[:,-1])
         print("*** ROC AUC = ***")
         print(self.score["ROC_AUC"])
 
@@ -303,31 +308,22 @@ class Test_streaming(object):
         while remaining > 0:
             batchiter = 0
             batch = min(remaining, self.batchsize)
-            datas = []
             for file in files[fileindex: fileindex + batch]:
                 cols = []
                 rows = []
+                datas=[]
                 col, row, data, y = self.parse_and_map_kmers(file, batchiter)
-                cols, rows, datas, y_test = self.create_sparse_coos(cols, rows, datas, y_test, col, row, data, y)
+                cols, rows, datas = self.create_sparse_coos(cols, rows, datas, col, row, data)
+                y=file[:5]
                 batchiter += 1
                 remaining -= 1
-                    #try:
-                y_preds, y_pruned = self.populate_sparse_matrix_and_append_prediction(cols, rows, datas, y_preds,
-                                                                                          y_pruned, batchiter, ls_index)
-                #     except Exception as e:
-                #         print(e)
-                #         y_test.pop([-1])
-                # except Exception as e:
-                #     print(e)
-                #     print('issue with testing file: '+file)
-                #     remaining -=1
-                #     batchiter += 1
 
-                print(np.shape(y_test[-1]))
-                print(np.shape(y_preds[-1]))
-                print(np.shape(y_test))
-                print(np.shape(y_preds))
-
+                X_test = self.populate_sparse_matrix(cols, rows, datas, batchiter)
+                try:
+                    y_preds, y_pruned, y_test = self.append_prediction(X_test, y_preds, y_pruned, y_test, ls_index, y)
+                except Exception as e:
+                    print('exception')
+                    print(e)
             fileindex += batch
 
         self.evaluate_and_dump(y_preds, y_test)

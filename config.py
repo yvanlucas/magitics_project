@@ -17,7 +17,7 @@ if mode == 'serv':
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
-    data='traindatabis'
+    data='traindata'
     testdir='test/test'
 
 # Kmer extraction parameters
