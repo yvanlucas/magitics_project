@@ -149,7 +149,7 @@ class Kmercount_to_matrix(object):
             self.strains.append(kmer.strainnumber)
             self.labels.append(kmer.label)
             self.extend_kmerdicts(kmer)
-            self.clean_temp_directories(kmer)
+            #self.clean_temp_directories(kmer)
 
         rows, cols, data = self.create_sparse_coos()
         self.populate_sparse_matrix(rows, cols, data)

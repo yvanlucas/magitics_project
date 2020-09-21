@@ -209,7 +209,7 @@ class Test_streaming(object):
 
     def append_prediction(self, X_test, y_preds, y_pruned, y_test, ls_index, y):
         y_preds.extend(self.clf.predict_proba(X_test))
-        y_pruned.extend(self.predict_pruned(X_test, ls_index))
+       # y_pruned.extend(self.predict_pruned(X_test, ls_index))
         y_test.append(y)
 
         return y_preds, y_pruned, y_test
@@ -327,7 +327,8 @@ class Test_streaming(object):
             fileindex += batch
 
         self.evaluate_and_dump(y_preds, y_test)
-        self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        #self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        print(ls_index)
         # self.write_report()
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
             pickle.dump(

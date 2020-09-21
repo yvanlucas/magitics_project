@@ -1,19 +1,21 @@
 import argparse
 # PATHs
 id='8'
-xp_name = 'pseud_levo_31'
-#xp_name = 'esche_amox_31'
-
+#xp_name = 'pseud_levo_31'
+xp_name = 'esche_amox_31'
+xp_name='acineto_imip_20'
 
 mode='serv' #can be ['local', 'serv']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
     pathtodata='/scratch/MAGITICS_data/'
-    testdir='Pseudomonas_aeruginosa/levofloxacin/test/test'
-    #testdir='Escherichia_coli/test/test'
-    #data='Escherichia_coli/traindata/'
-    data = 'Pseudomonas_aeruginosa/levofloxacin/traindata/'
+    #testdir='Pseudomonas_aeruginosa/levofloxacin/test/test'
+#    testdir='Escherichia_coli/test/test'
+#    data='Escherichia_coli/traindata/'
+    #data = 'Pseudomonas_aeruginosa/levofloxacin/traindata/'
+    data='Acinetobacter_baumanii/traindata/'
+    testdir='Acinetobacter_baumanii/test/test/'
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
