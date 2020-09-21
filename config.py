@@ -5,7 +5,7 @@ id='8'
 xp_name = 'esche_amox_31'
 xp_name='acineto_imip_20'
 
-mode='serv' #can be ['local', 'serv']
+mode='laptop' #can be ['local', 'serv', 'laptop']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
@@ -21,6 +21,11 @@ elif mode == 'local':
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
     data='traindata'
     testdir='test/test'
+elif mode == 'laptop':
+    pathtoxp='/home/ylucas/Bureau/expe_postdoc/xp'
+    pathtodata='/home/ylucas/Bureau/expe_postdoc/data_postdoc/'
+    data= ''
+    testdir='test'
 
 # Kmer extraction parameters
 
