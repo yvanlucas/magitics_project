@@ -3,9 +3,10 @@ import argparse
 id='8'
 xp_name = 'pseud_levo_31'
 #xp_name = 'esche_amox_31'
+#id='ADAkmers20_'+str(int(get_lenkmers()))
 
 
-mode='serv' #can be ['local', 'serv']
+mode='local' #can be ['local', 'serv']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
@@ -50,4 +51,3 @@ def get_lenkmers():
 
 len_kmers= 20 #int(get_lenkmers())
 
-id='ADAkmers20_'+str(int(get_lenkmers()))

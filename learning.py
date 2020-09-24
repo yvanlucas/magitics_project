@@ -193,9 +193,9 @@ class Test_streaming(object):
                     elif imp2 > imp1:
                         ls_index.append(ind1)
 
-        return list(set(ls_index))
+        return list(set(ls_index)) #list of redundant kmer indexes
 
-    def predict_pruned(self, X_test, ls_index):
+    def predict_pruned(self, X_test, ls_index): # here ls_index is assumed to be a list of trees to not take into account -> issue
         cumpred = np.array([x for x in self.clf.staged_decision_function(X_test)])[:, :, 0]
         preds_out = cumpred[-1,:]
 
@@ -209,7 +209,7 @@ class Test_streaming(object):
 
     def append_prediction(self, X_test, y_preds, y_pruned, y_test, ls_index, y):
         y_preds.extend(self.clf.predict_proba(X_test))
-        y_pruned.extend(self.predict_pruned(X_test, ls_index))
+        #y_pruned.extend(self.predict_pruned(X_test, ls_index))
         y_test.append(y)
 
         return y_preds, y_pruned, y_test

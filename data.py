@@ -175,7 +175,7 @@ class parse_genes_limits(object):
 
             if pgfam in self.dic_limits:
                 if self.strainnumber in self.dic_limits[pgfam]:
-                    self.dic_limits[pgfam][self.strainnumber].append(limits)
+                   self.dic_limits[pgfam][self.strainnumber].append(limits)
                 else:
                     self.dic_limits[pgfam][self.strainnumber] = [limits]
             else:
