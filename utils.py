@@ -53,6 +53,9 @@ def write_kover_metadata_files():
                 genomedata.write(filename[:-3]+'\t'+str(os.path.join(cfg.pathtodata, cfg.data+dirname, filename))+'\n')
                 metadata.write(filename[:-3]+'\t'+'0\n')
 
+def move_files_by_pair():
+    return
+
 #changefna2fa()
 #create_dir()
 #write_kover_metadata_files()

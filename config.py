@@ -1,11 +1,13 @@
 import argparse
 # PATHs
 id='8'
+
 #xp_name = 'pseud_levo_31'
-xp_name = 'esche_amox_31'
+#xp_name = 'esche_amox_31'
 xp_name='acineto_imip_20'
 
-mode='serv' #can be ['local', 'serv']
+mode='laptop' #can be ['local', 'serv', 'laptop']
+
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
@@ -21,10 +23,16 @@ elif mode == 'local':
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
     data='traindata'
     testdir='test/test'
+elif mode == 'laptop':
+    pathtoxp='/home/ylucas/Bureau/expe_postdoc/xp'
+    pathtodata='/home/ylucas/Bureau/expe_postdoc/data_postdoc/'
+    data= ''
+    testdir='test'
 
 # Kmer extraction parameters
 
 min_abundance = 3 #not used atm
+kmer_count=1 #1: kmer count, 0: presence/absence
 
 len_kmers=20
 # Learning parameters
@@ -52,4 +60,3 @@ def get_lenkmers():
 
 len_kmers= 20 #int(get_lenkmers())
 
-id='ADAkmers20_'+str(int(get_lenkmers()))
