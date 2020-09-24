@@ -6,19 +6,19 @@ import shutil
 import config as cfg
 
 
-def changefna2fa():
-    for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
-        for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data + dirname)):
-            print(filename[-4:])
-            if filename[-4:] == ".fna":
-                os.rename(
-                    os.path.join(cfg.pathtodata, cfg.data + dirname, filename),
-                    os.path.join(
-                        cfg.pathtodata, cfg.data, dirname, filename[:-4] + ".fa"
-                    ),
-                )
-            elif filename[-4:] == ".tab":
-                os.remove(os.path.join(cfg.pathtodata, cfg.data, dirname, filename))
+def changefna2fa(dirname):
+    #for dirname in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+    for filename in os.listdir(dirname): #os.path.join(cfg.pathtodata, cfg.data + dirname)):
+        print(filename[-4:])
+        if filename[-4:] == ".fna":
+            os.rename(
+                os.path.join( dirname, filename),
+                os.path.join(
+                     dirname, filename[:-4] + ".fa"
+                ),
+            )
+        elif filename[-4:] == ".tab":
+            os.remove(os.path.join(dirname, filename))
 
 
 def label_in_name(dirnamein, dirnameout):
@@ -52,6 +52,9 @@ def write_kover_metadata_files():
             elif dirname=='Susceptible':
                 genomedata.write(filename[:-3]+'\t'+str(os.path.join(cfg.pathtodata, cfg.data+dirname, filename))+'\n')
                 metadata.write(filename[:-3]+'\t'+'0\n')
+
+def move_files_by_pair():
+    return
 
 #changefna2fa()
 #create_dir()

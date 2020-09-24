@@ -1,29 +1,38 @@
 import argparse
 # PATHs
 id='8'
-xp_name = 'pseud_levo_31'
+
+#xp_name = 'pseud_levo_31'
 #xp_name = 'esche_amox_31'
-#id='ADAkmers20_'+str(int(get_lenkmers()))
+xp_name='acineto_imip_20'
 
+mode='laptop' #can be ['local', 'serv', 'laptop']
 
-mode='local' #can be ['local', 'serv']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
     pathtodata='/scratch/MAGITICS_data/'
-    testdir='Pseudomonas_aeruginosa/levofloxacin/test/test'
-    #testdir='Escherichia_coli/test/test'
-    #data='Escherichia_coli/traindata/'
-    data = 'Pseudomonas_aeruginosa/levofloxacin/traindata/'
+    #testdir='Pseudomonas_aeruginosa/levofloxacin/test/test'
+#    testdir='Escherichia_coli/test/test'
+#    data='Escherichia_coli/traindata/'
+    #data = 'Pseudomonas_aeruginosa/levofloxacin/traindata/'
+    data='Acinetobacter_baumanii/traindata/'
+    testdir='Acinetobacter_baumanii/test/test/'
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
     data='traindata'
     testdir='test/test'
+elif mode == 'laptop':
+    pathtoxp='/home/ylucas/Bureau/expe_postdoc/xp'
+    pathtodata='/home/ylucas/Bureau/expe_postdoc/data_postdoc/'
+    data= ''
+    testdir='test'
 
 # Kmer extraction parameters
 
 min_abundance = 3 #not used atm
+kmer_count=1 #1: kmer count, 0: presence/absence
 
 len_kmers=20
 # Learning parameters

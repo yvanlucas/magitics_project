@@ -242,7 +242,10 @@ class Test_streaming(object):
             try:
                 columns.append(self.kmer_to_index[kmer])
                 rows.append(batchnumber)
-                data.append(kmer_count[kmer])
+                if cfg.kmer_count==1:
+                    data.append(kmer_count[kmer])
+                else:
+                    data.append(1)
             except:
                 self.missing_kmers.append(kmer)
 
@@ -327,7 +330,8 @@ class Test_streaming(object):
             fileindex += batch
 
         self.evaluate_and_dump(y_preds, y_test)
-        self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        #self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        print(ls_index)
         # self.write_report()
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
             pickle.dump(

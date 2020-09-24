@@ -97,7 +97,10 @@ class Kmercount_to_matrix(object):
             for strain in self.kmerdicts[kmer]:
                 rows.append(self.strain_to_index[strain])
                 columns.append(self.kmer_to_index[kmer])
-                data.append(self.kmerdicts[kmer][strain])
+                if cfg.kmer_count==1:
+                    data.append(self.kmerdicts[kmer][strain])
+                else:
+                    data.append(1)
         del self.kmerdicts
         return rows, columns, data
 
@@ -149,22 +152,21 @@ class Kmercount_to_matrix(object):
             self.strains.append(kmer.strainnumber)
             self.labels.append(kmer.label)
             self.extend_kmerdicts(kmer)
-            self.clean_temp_directories(kmer)
+            #self.clean_temp_directories(kmer)
 
         rows, cols, data = self.create_sparse_coos()
         self.populate_sparse_matrix(rows, cols, data)
 
 
 class parse_genes_limits(object):
-    def __init__(self, fastaname, dic_limits):
-        self.pathtofile = fastaname
-        self.dic_limits=dic_limits
-        self.strainnumber = self.pathtofile.split('/')[-1][:-20]
+    def __init__(self):
+        return
 
-    def get_genes_limit(self):
-        with open(self.pathtofile, 'r') as f:
-            lines=f.readlines()
+    def get_genes_limit(self, pathtofile):
+        with open(pathtofile, 'r') as f:
+            lines=f.readlines()[1:]
         count_contigs=0
+        dic_limits={}
         for line in lines[:3]:
             line=line.split('\t')
             print(line)
@@ -173,20 +175,82 @@ class parse_genes_limits(object):
             pgfam=line[-4]
             limits = [(int(line[9]), int(line[10])), count_contigs]
 
-            if pgfam in self.dic_limits:
-                if self.strainnumber in self.dic_limits[pgfam]:
-                   self.dic_limits[pgfam][self.strainnumber].append(limits)
-                else:
-                    self.dic_limits[pgfam][self.strainnumber] = [limits]
+            if pgfam in dic_limits:
+                dic_limits[pgfam].append(limits)
+
             else:
-                self.dic_limits[pgfam]= {self.strainnumber: [limits]}
+                dic_limits[pgfam] = [limits]
+        return dic_limits
+
+    def extract_sequence(self, pathtofile):
+        with open(pathtofile, 'r') as f:
+            file=f.readlines()
+        contigs=[[]]
+        skipfirst=1
+        for i in file:
+            if skipfirst==0:
+                contigs[-1].append(str(i)[:-1])
+            skipfirst=0
+            if len(i)==1:
+                contigs += [[]]
+                skipfirst=1
+        return contigs
+
+    def extract_genes_from_seq(self, contigs, dic_limits):
+        dic_genes={}
+        for pgfam in dic_limits:
+            dic_genes[pgfam]=[]
+            for limits in dic_limits[pgfam]:
+                geneseq=contigs[limits[1]][limits[0][0]:limits[0][1]]
+                dic_genes[pgfam].append(geneseq)
+        return dic_genes
+
+    def kmers_within_gene(self, geneseq, len_kmers=31):
+        ls_kmers=[]
+        for i in range(len(geneseq)-len_kmers):
+            ls_kmers.append(geneseq[i:i+len_kmers])
+        return ls_kmers
+
+    def build_kmer_gene_dict(self, dic_kmer_gene, dic_gene):
+        """
+        dic_kmer_gene: {kmer:[pgfam1, pgfam2, ..]}
+        dic_gene: {pgfam:[seq1, seq2, ..]}
+        """
+        for pgfam in dic_gene.keys():
+            for seq in dic_gene[pgfam]:
+                ls_kmers=self.kmers_within_gene(seq)
+                for kmer in ls_kmers:
+                    if kmer in dic_kmer_gene:
+                        dic_kmer_gene[kmer].append(pgfam)
+                    else:
+                        dic_kmer_gene[kmer] = [pgfam]
+        return dic_kmer_gene
+
+    def get_genes_from_kmers(self):
+        """
+        Method used to understand results
+        """
         return
 
     def run(self):
-        self.get_genes_limit()
+        dic_kmer_gene={}
+        for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data))[::2]:
+            limitfile=filename
+            seqfile=filename
+            dic_limits=self.get_genes_limit(limitfile)
+            contigs=self.extract_sequence(seqfile)
+            dic_genes=self.extract_genes_from_seq(contigs, dic_limits)
+            dic_kmer_gene=self.build_kmer_gene_dict(dic_kmer_gene, dic_genes)
+
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id,'dic_kmer_gene.pkl'),'w') as f:
+            pickle.dump(dic_kmer_gene, f)
 
 
+class gene_parser(object):
+    def __init__(self):
+        return
+    
 
-#gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, 'Resistant287.853.PATRIC.features.tab'))
+gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
 
-#gene_limits.run()
+gene_limits.run()
