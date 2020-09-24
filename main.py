@@ -5,7 +5,7 @@ import pickle
 import config as cfg
 import data
 import learning
-
+import memory_profiler
 
 
 def create_trainDB():

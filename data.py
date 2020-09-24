@@ -1,6 +1,6 @@
 import os
 import pickle
-
+import memory_profiler
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
@@ -137,6 +137,7 @@ class Kmercount_to_matrix(object):
         # cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
         # os.system(cleantempcmd)
 
+    @profile
     def run(self):
         self.kmerdicts = {}
         self.labels = []
