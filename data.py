@@ -97,7 +97,10 @@ class Kmercount_to_matrix(object):
             for strain in self.kmerdicts[kmer]:
                 rows.append(self.strain_to_index[strain])
                 columns.append(self.kmer_to_index[kmer])
-                data.append(self.kmerdicts[kmer][strain])
+                if cfg.kmer_count==1:
+                    data.append(self.kmerdicts[kmer][strain])
+                else:
+                    data.append(1)
         del self.kmerdicts
         return rows, columns, data
 
@@ -242,6 +245,10 @@ class parse_genes_limits(object):
             pickle.dump(dic_kmer_gene, f)
 
 
+class gene_parser(object):
+    def __init__(self):
+        return
+    
 
 gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
 

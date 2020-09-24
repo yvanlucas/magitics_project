@@ -242,7 +242,10 @@ class Test_streaming(object):
             try:
                 columns.append(self.kmer_to_index[kmer])
                 rows.append(batchnumber)
-                data.append(kmer_count[kmer])
+                if cfg.kmer_count==1:
+                    data.append(kmer_count[kmer])
+                else:
+                    data.append(1)
             except:
                 self.missing_kmers.append(kmer)
 

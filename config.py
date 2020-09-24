@@ -30,6 +30,7 @@ elif mode == 'laptop':
 # Kmer extraction parameters
 
 min_abundance = 3 #not used atm
+kmer_count=1 #1: kmer count, 0: presence/absence
 
 len_kmers=20
 # Learning parameters

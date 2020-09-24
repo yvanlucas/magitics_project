@@ -1,3 +1,4 @@
+"""
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
@@ -27,6 +28,15 @@ def prune_prediction(cum_pred, ls_index):
     for i in ls_index: #i can't be 0 but who would prune first tree of boosting
         preds_out=preds_out - (cum_preds[i-1,:]-cum_preds[i,:])
     return preds_out
+"""
 
+import pandas as pd
 
+df=pd.read_csv('/home/ylucas/Bureau/expe_postdoc/data_postdoc/287.846.PATRIC.features.tab', sep='\t')
+a=  df.describe(include='all')
 
+dfbis=pd.read_csv('/home/ylucas/Bureau/expe_postdoc/data_postdoc/287.847.PATRIC.features.tab', sep='\t')
+b=  dfbis.describe(include='all')
+
+dfter=df+dfbis
+c=dfter.describe(include='all')
