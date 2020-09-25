@@ -29,10 +29,6 @@ class Train_kmer_clf(object):
         self.mat = dataframe
         self.clf = clf
         self.param_grid = param_grid
-        # if self.dataframe == None:
-        #     table=pq.read_table(os.path.join(cfg.pathtoxp, cfg.xp_name, 'kmers_DF.parquet'))
-        #     self.dataframe=table.to_pandas()
-        #     self.dataframe.transpose()
 
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_mats.pkl"), "rb") as f:
             [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
@@ -130,6 +126,30 @@ class Train_kmer_clf(object):
             pickle.dump(
                 {"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test}, f,
                 protocol=4)
+
+    def get_accuracy_treshold(self, X_train, y_train):
+        train_predict=self.cv_clf.best_estimator_.predict_proba(X_train)[:,-1]
+
+        accuracies=[]
+        nsteps=100
+        for i in range(nsteps):
+            tres=i/nsteps
+            tresd_predict=[]
+            for pred in train_predict:
+                if pred>tres:
+                    tresd_predict.append(1)
+                else:
+                    tresd_predict.append(0)
+            accuracies.append(metrics.accuracy_score(y_train, tresd_predict))
+
+        ind=accuracies.index(max(accuracies))
+
+        return ind/nsteps
+
+
+
+        #TODO coder la fonction qui trouve le meilleur treshold pour l'accuracy sur le trainset
+        return
 
     def run(self, evaluate=True):
         self.preprocess()

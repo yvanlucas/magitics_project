@@ -70,6 +70,70 @@ class Kmer_parser(object):
                     print("line = " + line)
 
 
+class plfam_parser(object):
+    def __init__(self, strainID):
+        self.strainID=strainID
+        self.pathtofile=cfg.pathtodata, cfg.data, strainID+'.PATRIC.features.tab'
+
+    def run(self):
+        plfams=[]
+
+        with open(self.pathtofile, 'r') as f:
+            lines=f.readlines()
+        for line in lines:
+            plfams.append(line.split('/t')[16])
+        plfams.append(self.strainID[:9])
+        return plfams
+
+
+class plfam_to_matrix(object):
+    #TODO class to create a plfam matrix instead of kmercount
+    def __init__(self):
+        return
+
+    def get_list_plfams(self, dic_data):
+        ls_plfams=[]
+        for strain in dic_data:
+            ls_plfams.extend(dic_data[strain])
+        ls_plfams=list(set(ls_plfams))
+        return ls_plfams
+
+    def fill_dic(self, dicdata, ls_plfams):
+        dic_df={}
+        for strainID in dicdata:
+            dic_df[strainID]={}
+            for plfam in ls_plfams:
+                dic_df[strainID][plfam]=0
+
+            for plfam in dicdata[strainID]:
+                dic_df[strainID][plfam]+=1
+
+        return dic_df
+
+    def run(self):
+        dic_data={}
+
+        for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
+            strainID=filename.split('/')[-1][:20]
+            parser=plfam_parser(strainID)
+            plfams=parser.run()
+            dic_data[strainID] = plfams
+        ls_plfam=self.get_list_plfams(dic_data)
+
+        dic_df=self.fill_dic(dic_data, ls_plfam)
+        df=pd.DataFrame(dic_df)
+
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id, "kmers_mats.pkl"), "wb") as f:
+            pickle.dump([df, labels], f, protocol=4)
+
+
+
+
+
+
+
+
+
 class Kmercount_to_matrix(object):
     """
     This class allows us to iterate over fastas file, count kmers using the class KmerExtractionandCount and create a
@@ -247,10 +311,7 @@ class parse_genes_limits(object):
             pickle.dump(dic_kmer_gene, f)
 
 
-class gene_parser(object):
-    def __init__(self):
-        return
-    
+
 
 gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
 
