@@ -204,7 +204,7 @@ class Kmercount_to_matrix(object):
         # cleantempcmd="rm -rf %s" % (self.kmer.pathtosavetemp)
         # os.system(cleantempcmd)
 
-    @profile
+    #@profile
     def run(self):
         self.kmerdicts = {}
         self.labels = []
@@ -313,6 +313,6 @@ class parse_genes_limits(object):
 
 
 
-gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
+#gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
 
-gene_limits.run()
+#gene_limits.run()

@@ -144,12 +144,12 @@ class Train_kmer_clf(object):
 
         ind=accuracies.index(max(accuracies))
 
-        return ind/nsteps
+        tres=float(ind)/float(nsteps)
+        print(tres)
 
-
-
-        #TODO coder la fonction qui trouve le meilleur treshold pour l'accuracy sur le trainset
-        return
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "w") as f:
+            f.write(str(tres))
+        return tres
 
     def run(self, evaluate=True):
         self.preprocess()
@@ -157,6 +157,7 @@ class Train_kmer_clf(object):
         #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
 
         self.fit(X_train, y_train)
+        tres=self.get_accuracy_treshold(X_train, y_train)
 
         if evaluate:
             y_predict = self.predict(X_test)
@@ -279,6 +280,21 @@ class Test_streaming(object):
             os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
         os.system(outputCmd)
 
+
+    def adapted_accuracy(self, y_test, y_preds):
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "r") as f:
+            tres=f.readlines()[0]
+
+        y_preds_adapted=[]
+        for pred in y_preds[:,-1]:
+            if pred>float(tres):
+                y_preds_adapted.append(1.0)
+            else:
+                y_preds_adapted.append(0.0)
+        score=metrics.accuracy_score(y_test, y_preds_adapted)
+        print(score)
+        return score
+
     def evaluate_and_dump(self, y_preds, y_test, pruned=False):
         le = preprocessing.LabelEncoder()
         y_test = le.fit_transform(y_test)
@@ -286,6 +302,7 @@ class Test_streaming(object):
         y_preds = np.vstack(y_preds)
         self.score = {}
         self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds[:,-1])
+        self.score["Accuracy"] = self.adapted_accuracy(y_test, y_preds)
         self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds[:,-1].round())
         self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds[:,-1])
         self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds[:,-1])

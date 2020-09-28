@@ -2,11 +2,11 @@ import argparse
 # PATHs
 id='8'
 
-#xp_name = 'pseud_levo_31'
+xp_name = 'pseud_levo_31'
 #xp_name = 'esche_amox_31'
-xp_name='acineto_imip_20'
+#xp_name='acineto_imip_20'
 
-mode='laptop' #can be ['local', 'serv', 'laptop']
+mode='local' #can be ['local', 'serv', 'laptop']
 
 
 if mode == 'serv':
