@@ -69,21 +69,20 @@ class Kmer_parser(object):
                 except:
                     print("line = " + line)
 
-
 class plfam_parser(object):
     def __init__(self, strainID):
         self.strainID=strainID
-        self.pathtofile=cfg.pathtodata, cfg.data, strainID+'.PATRIC.features.tab'
+        self.pathtofile=os.path.join(cfg.pathtodata, cfg.data, strainID+'.PATRIC.features.tab')
 
     def run(self):
         plfams=[]
-
         with open(self.pathtofile, 'r') as f:
             lines=f.readlines()
+        y=self.strainID[:9]
         for line in lines:
-            plfams.append(line.split('/t')[16])
-        plfams.append(self.strainID[:9])
-        return plfams
+            plfams.append(line.split('\t')[16])
+
+        return plfams, y
 
 
 class plfam_to_matrix(object):
@@ -101,38 +100,30 @@ class plfam_to_matrix(object):
     def fill_dic(self, dicdata, ls_plfams):
         dic_df={}
         for strainID in dicdata:
+            print(strainID)
             dic_df[strainID]={}
             for plfam in ls_plfams:
                 dic_df[strainID][plfam]=0
-
             for plfam in dicdata[strainID]:
                 dic_df[strainID][plfam]+=1
-
         return dic_df
 
     def run(self):
         dic_data={}
-
+        targets=[]
         for filename in os.listdir(os.path.join(cfg.pathtodata, cfg.data)):
-            strainID=filename.split('/')[-1][:20]
+            strainID=filename.split('/')[-1][:-20]
+            print(strainID)
             parser=plfam_parser(strainID)
-            plfams=parser.run()
+            plfams, y=parser.run()
+            targets.append(y)
             dic_data[strainID] = plfams
         ls_plfam=self.get_list_plfams(dic_data)
-
         dic_df=self.fill_dic(dic_data, ls_plfam)
-        df=pd.DataFrame(dic_df)
-
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id, "kmers_mats.pkl"), "wb") as f:
-            pickle.dump([df, labels], f, protocol=4)
-
-
-
-
-
-
-
-
+        self.df=pd.DataFrame(dic_df).T
+        #self.df['target']=targets
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id, "kmers_DF.pkl"), "wb") as f:
+            pickle.dump([self.df, targets], f, protocol=4)
 
 class Kmercount_to_matrix(object):
     """
@@ -221,7 +212,6 @@ class Kmercount_to_matrix(object):
 
         rows, cols, data = self.create_sparse_coos()
         self.populate_sparse_matrix(rows, cols, data)
-
 
 class parse_genes_limits(object):
     def __init__(self):
@@ -312,7 +302,6 @@ class parse_genes_limits(object):
 
 
 
+#genedf=plfam_to_matrix()
 
-#gene_limits=parse_genes_limits(os.path.join(cfg.pathtodata, cfg.data, '287.846'))
-
-#gene_limits.run()
+#genedf.run()

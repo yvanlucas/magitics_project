@@ -11,27 +11,30 @@ import config as cfg
 
 
 class Train_kmer_clf(object):
-    def __init__(self, dataframe=None, clf=None, param_grid=None):
-        if clf==None:
-            if cfg.model == "rf":
-                clf = ensemble.RandomForestClassifier()
-                param_grid = cfg.rf_grid
-            elif cfg.model == "SCM":
-                clf = pyscm.SetCoveringMachineClassifier()
-                param_grid = cfg.SCM_grid
-            elif cfg.model == "gradient":
-                clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-                param_grid = cfg.gradient_grid
-            elif cfg.model == 'Ada':
-                clf = ensemble.AdaBoostClassifier()
-                param_grid=cfg.ada_grid
+    def __init__(self):
 
-        self.mat = dataframe
-        self.clf = clf
-        self.param_grid = param_grid
+        if cfg.model == "rf":
+            self.clf = ensemble.RandomForestClassifier()
+            self.param_grid = cfg.rf_grid
+        elif cfg.model == "SCM":
+            self.clf = pyscm.SetCoveringMachineClassifier()
+            self.param_grid = cfg.SCM_grid
+        elif cfg.model == "gradient":
+            self.clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
+            self.param_grid = cfg.gradient_grid
+        elif cfg.model == 'Ada':
+            self.clf = ensemble.AdaBoostClassifier()
+            self.param_grid=cfg.ada_grid
 
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_mats.pkl"), "rb") as f:
-            [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
+        if cfg.dtype=='sparse':
+            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_mats.pkl"), "rb") as f:
+                [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
+            self.testratio=0
+        elif cfg.dtype=='df':
+            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_DF.pkl"), "rb") as f:
+                [self.mat, self.labels]=pickle.load(f)
+            self.kmer_to_index=self.mat.columns
+            self.testratio=0.3
 
     def preprocess(self):
         # to_drop = ["label", "strain"]
@@ -40,9 +43,9 @@ class Train_kmer_clf(object):
         self.le = preprocessing.LabelEncoder()
         self.y = self.le.fit_transform(self.labels)
 
-    def split_train_test(self, testratio=0.2):
-        if testratio > 0:
-            X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, self.y, test_size=testratio)
+    def split_train_test(self):
+        if self.testratio > 0:
+            X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, self.y, test_size=self.testratio)
         else:
             X_train = self.mat
             y_train = self.y
@@ -58,7 +61,7 @@ class Train_kmer_clf(object):
         return X_train, X_test
 
     def fit(self, X_train, y_train):
-        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2,
+        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
                                                    scoring="accuracy", n_jobs=4)
         self.cv_clf.fit(X_train, y_train)
 
@@ -69,11 +72,15 @@ class Train_kmer_clf(object):
         y_predict = self.cv_clf.predict_proba(X_test)
         return y_predict
 
+    def adapted_accuracy(self,y_test, y_pred):
+        return Test_streaming.adapted_accuracy(self, y_test, y_pred)
+
     def prediction_scores(self, y_test, y_pred):
 
         self.score = {}
         self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_pred[:, 1])
-        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_pred[:, 1].round())
+        #self.score["Accuracy"] = metrics.accuracy_score(y_test, y_pred[:, 1].round())
+        self.score["Accuracy"] = self.adapted_accuracy(y_test, y_pred)
         self.score["MAE"] = metrics.mean_absolute_error(y_test, y_pred[:, 1])
         self.score["MSE"] = metrics.mean_squared_error(y_test, y_pred[:, 1])
         print("*** ROC AUC = ***")
@@ -117,7 +124,10 @@ class Train_kmer_clf(object):
             txt.write("\n Relevant kmers : \n")
             if cfg.model == "rf" or cfg.model == "gradient":
                 featimp = self.cv_clf.best_estimator_.feature_importances_
-                kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
+                if cfg.dtype=='sparse':
+                    kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
+                elif cfg.dtype=='df':
+                    kmers = [self.kmer_to_index[i] for i in np.nonzero(featimp)[0]]
                 for kmer in kmers:
                     txt.write(str(kmer) + "\n")
 
@@ -151,15 +161,15 @@ class Train_kmer_clf(object):
             f.write(str(tres))
         return tres
 
-    def run(self, evaluate=True):
+    def run(self):
         self.preprocess()
-        X_train, X_test, y_train, y_test = self.split_train_test(testratio=0.0)
+        X_train, X_test, y_train, y_test = self.split_train_test()
         #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
 
         self.fit(X_train, y_train)
         tres=self.get_accuracy_treshold(X_train, y_train)
 
-        if evaluate:
+        if cfg.dtype=='df':
             y_predict = self.predict(X_test)
 
             self.prediction_scores(y_test, y_predict)

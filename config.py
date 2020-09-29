@@ -7,7 +7,7 @@ xp_name = 'pseud_levo_31'
 #xp_name='acineto_imip_20'
 
 mode='local' #can be ['local', 'serv', 'laptop']
-
+dtype='df' #can be ['df','sparse']
 
 if mode == 'serv':
     pathtoxp = '/mnt/cbib/MAGITICS_Yvan/experiments_kmer_count/'
@@ -21,7 +21,7 @@ if mode == 'serv':
 elif mode == 'local':
     pathtoxp = '/home/ylucas/toydata_pseudomonas_levofloxacin/'
     pathtodata='/home/ylucas/toydata_pseudomonas_levofloxacin/'
-    data='traindata'
+    data='traindatabis'
     testdir='test/test'
 elif mode == 'laptop':
     pathtoxp='/home/ylucas/Bureau/expe_postdoc/xp'
