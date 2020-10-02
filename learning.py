@@ -11,8 +11,11 @@ import config as cfg
 
 
 class Train_kmer_clf(object):
+    """
+    Train in batch version and optionnally test in batch settings
+    Also optimize the treshold for computing accuracies
+    """
     def __init__(self):
-
         if cfg.model == "rf":
             self.clf = ensemble.RandomForestClassifier()
             self.param_grid = cfg.rf_grid
@@ -24,28 +27,36 @@ class Train_kmer_clf(object):
             self.param_grid = cfg.gradient_grid
         elif cfg.model == 'Ada':
             self.clf = ensemble.AdaBoostClassifier()
-            self.param_grid=cfg.ada_grid
+            self.param_grid = cfg.ada_grid
 
-        if cfg.dtype=='sparse':
+        if cfg.dtype == 'sparse':
             with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_mats.pkl"), "rb") as f:
                 [self.mat, self.labels, self.strain_to_index, self.kmer_to_index] = pickle.load(f)
-            self.testratio=0
-        elif cfg.dtype=='df':
+            self.testratio = 0.0
+        elif cfg.dtype == 'df':
             with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "kmers_DF.pkl"), "rb") as f:
-                [self.mat, self.labels]=pickle.load(f)
-            self.kmer_to_index=self.mat.columns
-            self.testratio=0.3
+                [self.mat, self.labels] = pickle.load(f)
+            self.kmer_to_index = self.mat.columns
+            self.testratio = 0.3
 
-    def preprocess(self):
+    def preprocess_y(self):
+        """
+        Transform y into a binary vector
+        """
         # to_drop = ["label", "strain"]
         # X = self.mat.drop(to_drop, axis=1)
         # self.columns = X.columns
-        self.le = preprocessing.LabelEncoder()
-        self.y = self.le.fit_transform(self.labels)
+        le = preprocessing.LabelEncoder()
+        self.y = le.fit_transform(self.labels)
 
     def split_train_test(self):
+        """
+        Split the data matrix and target vector into train and test matrices and vector
+        :return: X_train, X_test, y_train, y_test
+        """
         if self.testratio > 0:
-            X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, self.y, test_size=self.testratio)
+            X_train, X_test, y_train, y_test = model_selection.train_test_split(self.mat, self.y,
+                                                                                test_size=self.testratio)
         else:
             X_train = self.mat
             y_train = self.y
@@ -55,39 +66,88 @@ class Train_kmer_clf(object):
         return X_train, X_test, y_train, y_test
 
     def chi2_feature_selection(self, X_train, X_test, y_train):
-        self.chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000000)
-        X_train = self.chi2_selector.fit_transform(X_train, y_train)
-        X_test = self.chi2_selector.transform(X_test)
+        """
+        Refactor X_train and X_test only keeping features that are correlated with the target y_train
+        :param X_train: train numpy array
+        :param X_test: test numpy array
+        :param y_train: train target variable vector
+        :return: refined X_train and X_test
+        """
+        chi2_selector = feature_selection.SelectKBest(feature_selection.chi2, k=1000000)
+        X_train = chi2_selector.fit_transform(X_train, y_train)
+        X_test = chi2_selector.transform(X_test)
         return X_train, X_test
 
     def fit(self, X_train, y_train):
-        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=3,
-                                                   scoring="accuracy", n_jobs=4)
+        """
+        Fit the chosen classifier using gridsearch cross validation
+        :param X_train:
+        :param y_train:
+        """
+        self.cv_clf = model_selection.GridSearchCV(estimator=self.clf, param_grid=self.param_grid, cv=2,
+                                                   scoring="accuracy", n_jobs=1)
         self.cv_clf.fit(X_train, y_train)
-
+        self.y_pred = self.cv_clf.predict_proba(X_train)
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'wb') as f:
             pickle.dump({"classifier": self.cv_clf, "features": self.kmer_to_index}, f, protocol=4)
 
     def predict(self, X_test):
+        """
+        Batch predict of X_test labels
+        :param X_test:
+        :return: y_predict
+        """
         y_predict = self.cv_clf.predict_proba(X_test)
         return y_predict
 
-    def adapted_accuracy(self,y_test, y_pred):
-        return Test_streaming.adapted_accuracy(self, y_test, y_pred)
 
-    def prediction_scores(self, y_test, y_pred):
 
-        self.score = {}
-        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_pred[:, 1])
-        #self.score["Accuracy"] = metrics.accuracy_score(y_test, y_pred[:, 1].round())
-        self.score["Accuracy"] = self.adapted_accuracy(y_test, y_pred)
-        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_pred[:, 1])
-        self.score["MSE"] = metrics.mean_squared_error(y_test, y_pred[:, 1])
-        print("*** ROC AUC = ***")
-        print(self.score["ROC_AUC"])
+    def get_accuracy_treshold(self, X_train, y_train):
+        """
+        Calculate the treshold to obtain the best accuracy on the train set
+        :param X_train:
+        :param y_train:
+        :return: treshold value
+        """
+        train_predict = self.cv_clf.best_estimator_.predict_proba(X_train)[:, -1]
+        accuracies = []
+        nsteps = 100
+        for i in range(nsteps):
+            tres = i / nsteps
+            tresd_predict = []
+            for pred in train_predict:
+                if pred > tres:
+                    tresd_predict.append(1)
+                else:
+                    tresd_predict.append(0)
+            accuracies.append(metrics.accuracy_score(y_train, tresd_predict))
+        ind = accuracies.index(max(accuracies))
+        treshold = float(ind) / float(nsteps)
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "w") as f:
+            f.write(str(treshold))
+        return treshold
+
+    def adapted_accuracy(self, y_test, y_pred, treshold):
+        """
+        Predict accuracy with respect to a calculated treshold (inherited from Test_streaming class)
+        :param y_test:
+        :param y_pred:
+        :return:
+        """
+        return Test_streaming.adapted_accuracy(self, y_test, y_pred, treshold)
+
+    def evaluate_and_write_report(self, y_test, y_pred, treshold):
+        """
+        Predict scores and write report
+        :param y_test:
+        :param y_pred:
+        """
+        Test_streaming.evaluate_and_write_report(self, y_test, y_pred, treshold)
 
     def plot_CV_heatmap(self):
-        # Heatmap for GridSearchCV
+        """
+        plot gridsearchCV heatmap
+        """
         ls_params = list(self.param_grid.keys())
         self.pvt = pd.pivot_table(pd.DataFrame(self.cv_clf.cv_results_), values="mean_test_score",
                                   index="param_" + ls_params[0], columns="param_" + ls_params[1])
@@ -96,6 +156,11 @@ class Train_kmer_clf(object):
         ax.figure.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_gridCV_heatmap.png"))
 
     def plot_boosting_learning_curve(self, X_test, y_test):
+        """
+        Plot boosting learning curve (test/train deviance = f (n_estimator) )
+        :param X_test:
+        :param y_test:
+        """
         if cfg.model == "gradient":
             test_score = np.zeros((self.cv_clf.best_params_["n_estimators"],), dtype=np.float64)
             for i, y_pred in enumerate(self.cv_clf.best_estimator_.staged_predict(X_test)):
@@ -114,73 +179,34 @@ class Train_kmer_clf(object):
             fig.tight_layout()
             plt.savefig(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}boosting_learning_curve.png"))
 
-    def write_report(self):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_report.txt"), "w") as txt:
-            txt.write(cfg.xp_name + "\n\n")
-            txt.write(str(self.score) + "\n")
-            txt.write("Len_kmers = " + str(cfg.len_kmers) + "\n")
-            txt.write("Model = " + str(self.clf) + "\n")
-            txt.write("Param_grid = " + str(self.param_grid) + "\n")
-            txt.write("\n Relevant kmers : \n")
-            if cfg.model == "rf" or cfg.model == "gradient":
-                featimp = self.cv_clf.best_estimator_.feature_importances_
-                if cfg.dtype=='sparse':
-                    kmers = [list(self.kmer_to_index.keys())[i] for i in np.nonzero(featimp)[0]]
-                elif cfg.dtype=='df':
-                    kmers = [self.kmer_to_index[i] for i in np.nonzero(featimp)[0]]
-                for kmer in kmers:
-                    txt.write(str(kmer) + "\n")
-
-    def dump_eval(self, y_test, y_predict):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
-            pickle.dump(
-                {"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test}, f,
-                protocol=4)
-
-    def get_accuracy_treshold(self, X_train, y_train):
-        train_predict=self.cv_clf.best_estimator_.predict_proba(X_train)[:,-1]
-
-        accuracies=[]
-        nsteps=100
-        for i in range(nsteps):
-            tres=i/nsteps
-            tresd_predict=[]
-            for pred in train_predict:
-                if pred>tres:
-                    tresd_predict.append(1)
-                else:
-                    tresd_predict.append(0)
-            accuracies.append(metrics.accuracy_score(y_train, tresd_predict))
-
-        ind=accuracies.index(max(accuracies))
-
-        tres=float(ind)/float(nsteps)
-        print(tres)
-
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "w") as f:
-            f.write(str(tres))
-        return tres
-
     def run(self):
-        self.preprocess()
+        """
+        Run method to wrap the class methods, train and optionnaly test the model in batch settings
+        """
+        self.preprocess_y()
         X_train, X_test, y_train, y_test = self.split_train_test()
         #        X_train, X_test = self.chi2_feature_selection(X_train, X_test, y_train)
-
         self.fit(X_train, y_train)
-        tres=self.get_accuracy_treshold(X_train, y_train)
-
-        if cfg.dtype=='df':
+        tres = self.get_accuracy_treshold(X_train, y_train)
+        if cfg.dtype == 'df':
             y_predict = self.predict(X_test)
-
-            self.prediction_scores(y_test, y_predict)
+            self.evaluate_and_write_report(y_test, y_predict, tres)
             self.plot_CV_heatmap()
             self.plot_boosting_learning_curve(X_test, y_test)
 
-            self.write_report()
-            self.dump_eval(y_train, y_predict)
+            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+                pickle.dump(
+                    {"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test},
+                    f,
+                    protocol=4)
+
 
 
 class Test_streaming(object):
+    """
+    Test in stream settings
+    Also optionally prune the classifier discarding trees that use
+    """
     def __init__(self, kmer_to_index=None, clf=None, batchsize=10):
         self.batchsize = 1
 
@@ -188,10 +214,11 @@ class Test_streaming(object):
         self.kmer_to_index = kmer_to_index
         try:
             self.clf = clf.best_estimator_
-        except:
-            self.clf=clf
-        self.pathtotemp = os.path.join(cfg.pathtoxp,cfg.xp_name,cfg.id, "test-temp")
-        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name,cfg.id,"test-output")
+        except Exception as e:
+            print(e)
+            self.clf = clf
+        self.pathtotemp = os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "test-temp")
+        self.pathtosave = os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, "test-output")
 
         if not (os.path.isdir(self.pathtotemp) and os.path.isdir(self.pathtosave)):
             mkdirCmd = "mkdir %s" % (self.pathtotemp)
@@ -203,7 +230,6 @@ class Test_streaming(object):
         cols.extend(col)
         rows.extend(row)
         datas.extend(data)
-
         return cols, rows, datas
 
     def prune_boosting(self):
@@ -224,14 +250,15 @@ class Test_streaming(object):
                     elif imp2 > imp1:
                         ls_index.append(ind1)
 
-        return list(set(ls_index)) #list of redundant kmer indexes
+        return list(set(ls_index))  # list of redundant kmer indexes
 
-    def predict_pruned(self, X_test, ls_index): # here ls_index is assumed to be a list of trees to not take into account -> issue
+    def predict_pruned(self, X_test,
+                       ls_index):  # here ls_index is assumed to be a list of trees to not take into account -> issue
         cumpred = np.array([x for x in self.clf.staged_decision_function(X_test)])[:, :, 0]
-        preds_out = cumpred[-1,:]
+        preds_out = cumpred[-1, :]
 
         for i in ls_index:  # i can't be 0 but who would prune first tree of boosting
-            preds_out = preds_out - (cumpred[i - 1,:] - cumpred[i,:])
+            preds_out = preds_out - (cumpred[i - 1, :] - cumpred[i, :])
         return preds_out
 
     def populate_sparse_matrix(self, cols, rows, datas, batch):
@@ -240,7 +267,7 @@ class Test_streaming(object):
 
     def append_prediction(self, X_test, y_preds, y_pruned, y_test, ls_index, y):
         y_preds.extend(self.clf.predict_proba(X_test))
-        #y_pruned.extend(self.predict_pruned(X_test, ls_index))
+        # y_pruned.extend(self.predict_pruned(X_test, ls_index))
         y_test.append(y)
 
         return y_preds, y_pruned, y_test
@@ -273,7 +300,7 @@ class Test_streaming(object):
             try:
                 columns.append(self.kmer_to_index[kmer])
                 rows.append(batchnumber)
-                if cfg.kmer_count==1:
+                if cfg.kmer_count == 1:
                     data.append(kmer_count[kmer])
                 else:
                     data.append(1)
@@ -290,32 +317,31 @@ class Test_streaming(object):
             os.path.join(self.pathtotemp, fastaname), os.path.join(self.pathtosave, fastaname))
         os.system(outputCmd)
 
+    def adapted_accuracy(self, y_test, y_preds, tres):
 
-    def adapted_accuracy(self, y_test, y_preds):
-        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "r") as f:
-            tres=f.readlines()[0]
-
-        y_preds_adapted=[]
-        for pred in y_preds[:,-1]:
-            if pred>float(tres):
+        y_preds_adapted = []
+        for pred in y_preds[:, -1]:
+            if pred > float(tres):
                 y_preds_adapted.append(1.0)
             else:
                 y_preds_adapted.append(0.0)
-        score=metrics.accuracy_score(y_test, y_preds_adapted)
+        score = metrics.accuracy_score(y_test, y_preds_adapted)
         print(score)
         return score
 
-    def evaluate_and_dump(self, y_preds, y_test, pruned=False):
+    def evaluate_and_write_report(self, y_preds, y_test, tres=None, pruned=False):
         le = preprocessing.LabelEncoder()
         y_test = le.fit_transform(y_test)
 
-        y_preds = np.vstack(y_preds)
         self.score = {}
-        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds[:,-1])
-        self.score["Accuracy"] = self.adapted_accuracy(y_test, y_preds)
-        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds[:,-1].round())
-        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds[:,-1])
-        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds[:,-1])
+        self.score["ROC_AUC"] = metrics.roc_auc_score(y_test, y_preds[:, -1])
+        if tres==None:
+            with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_tres_value.txt"), "r") as f:
+                tres = f.readlines()[0]
+        self.score["Accuracy"] = self.adapted_accuracy(y_test, y_preds, tres)
+        self.score["Accuracy"] = metrics.accuracy_score(y_test, y_preds[:, -1].round())
+        self.score["MAE"] = metrics.mean_absolute_error(y_test, y_preds[:, -1])
+        self.score["MSE"] = metrics.mean_squared_error(y_test, y_preds[:, -1])
         print("*** ROC AUC = ***")
         print(self.score["ROC_AUC"])
 
@@ -361,10 +387,10 @@ class Test_streaming(object):
             for file in files[fileindex: fileindex + batch]:
                 cols = []
                 rows = []
-                datas=[]
+                datas = []
                 col, row, data, y = self.parse_and_map_kmers(file, batchiter)
                 cols, rows, datas = self.create_sparse_coos(cols, rows, datas, col, row, data)
-                y=file[:5]
+                y = file[:5]
                 batchiter += 1
                 remaining -= 1
 
@@ -374,10 +400,16 @@ class Test_streaming(object):
                 except Exception as e:
                     print('exception')
                     print(e)
+                print(y_test)
+                print(y_preds)
             fileindex += batch
 
-        self.evaluate_and_dump(y_preds, y_test)
-        #self.evaluate_and_dump(y_pruned, y_test, pruned=True)
+        y_preds = np.vstack(y_preds)
+        self.evaluate_and_write_report(y_preds, y_test)
+        self.y_preds = y_preds
+        self.y_test = y_test
+        self.X_test = X_test
+        # self.evaluate_and_dump(y_pruned, y_test, pruned=True)
         print(ls_index)
         # self.write_report()
         with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
@@ -387,23 +419,18 @@ class Test_streaming(object):
                 f, protocol=4)
         self.clean_temp_directories()
 
-# if cfg.model == "rf":
-#     clf = ensemble.RandomForestClassifier()
-#     param_grid = cfg.rf_grid
-# elif cfg.model == "SCM":
-#     clf = pyscm.SetCoveringMachineClassifier()
-#     param_grid = cfg.SCM_grid
-# elif cfg.model == "gradient":
-#     clf = ensemble.GradientBoostingClassifier(max_depth=4, max_features=None)
-#     param_grid = cfg.gradient_grid
-# expe = ResistancePredictionkmers(classifier=clf, param_grid=param_grid)
-# expe.run(evaluate=False)
+    def dump_eval(self, y_test, y_predict):
+        with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "wb") as f:
+            pickle.dump(
+                {"classifier": self.cv_clf, "features": self.kmer_to_index, "y_pred": y_predict, "y_true": y_test}, f,
+                protocol=4)
+
+# train=Train_kmer_clf()
+# train.run()
 #
-# with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f"{cfg.model}_CVresults.pkl"), "rb") as f:
-#    dic = pickle.load(f)
-#    clf = dic['classifier']
-#    kmer_to_index = dic['features']
-#    print('loaded')
 #
-# test = TestStreamingBatch(clf=clf, kmer_to_index=kmer_to_index)
+# #with open(os.path.join(cfg.pathtoxp, cfg.xp_name, cfg.id, f'{cfg.model}_CVresults.pkl'), 'rb') as f:
+# #    dic=pickle.load(f)
+# #test=Test_streaming(batchsize=1, kmer_to_index=dic['features'], clf=dic['classifier'])
+# test = Test_streaming(batchsize=1, kmer_to_index=train.kmer_to_index, clf=train.cv_clf)
 # test.run()

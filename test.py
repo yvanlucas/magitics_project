@@ -28,7 +28,7 @@ def prune_prediction(cum_pred, ls_index):
     for i in ls_index: #i can't be 0 but who would prune first tree of boosting
         preds_out=preds_out - (cum_preds[i-1,:]-cum_preds[i,:])
     return preds_out
-"""
+
 
 import pandas as pd
 
@@ -40,3 +40,17 @@ b=  dfbis.describe(include='all')
 
 dfter=df+dfbis
 c=dfter.describe(include='all')
+"""
+
+with open('/home/ylucas/toydata_pseudomonas_levofloxacin/traindata/Resistant287.8519.fa','r') as f:
+    lines=f.readlines()
+ls_lengths=[]
+
+len_contig=0
+for line in lines:
+    if(len(line))>10 & (len(line))<100:
+        len_contig+= len(line)
+    elif (len(line))<10:
+        ls_lengths.append(len_contig)
+        len_contig=0
+print(ls_lengths)
